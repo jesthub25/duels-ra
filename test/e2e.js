@@ -87,6 +87,12 @@ function waitWindow(b, ms = 5000) {
   });
 }
 const npcOf = (b) => b.nearestEntity((e) => e.name === 'villager');
+function useNpc(b) {
+  const e = npcOf(b);
+  if (!e) { log('NPC bulunamadi (' + b.username + ')'); return false; }
+  b.activateEntity(e);
+  return true;
+}
 const inArena = (b) => {
   const p = b.entity.position;
   return p.x >= 100 && p.x < 121 && p.z >= 100 && p.z < 121;
@@ -167,7 +173,7 @@ async function main() {
   const tradeListener = () => { tradeOpened = true; };
   A.on('windowOpen', tradeListener);
   const jA = waitChat(A, /Duel sırasına girdin/);
-  A.activateEntity(npcOf(A));
+  useNpc(A);
   check(await jA, 'A siraya girdi');
   await sleep(800);
   A.removeListener('windowOpen', tradeListener);
@@ -176,7 +182,7 @@ async function main() {
   // --- A-B eslesme ve red
   let mA = waitChat(A, /BotB oyuncusuyla eşleştin/);
   let mB = waitChat(B, /BotA oyuncusuyla eşleştin/);
-  B.activateEntity(npcOf(B));
+  useNpc(B);
   check(await mA && await mB, 'A-B eslesti, sohbette soruldu');
   const dA = waitChat(A, /BotB eşleşmeyi reddetti/);
   const rqA = waitChat(A, /Tekrar duel sırasının başına/);
@@ -187,7 +193,7 @@ async function main() {
 
   // --- red engeli: B tekrar girer, A ile eslesmemeli
   const jB = waitChat(B, /Duel sırasına girdin/);
-  B.activateEntity(npcOf(B));
+  useNpc(B);
   check(await jB, 'B tekrar siraya girdi');
   check(!(await waitChat(A, /eşleştin/, 3500)), 'Reddeden ayni oyuncuyla tekrar eslesmedi');
 
@@ -196,7 +202,7 @@ async function main() {
   await sleep(800);
   mA = waitChat(A, /BotC oyuncusuyla eşleştin/);
   const mC = waitChat(C, /BotA oyuncusuyla eşleştin/);
-  C.activateEntity(npcOf(C));
+  useNpc(C);
   check(await mA && await mC, 'A-C eslesti (B beklemede)');
   check(!(await waitChat(B, /eşleştin/, 500)), 'B bu sirada eslesmedi');
 
@@ -265,7 +271,7 @@ async function main() {
   await sleep(2000);
   const mB2 = waitChat(B, /BotC oyuncusuyla eşleştin/);
   const mC2 = waitChat(C, /BotB oyuncusuyla eşleştin/);
-  C.activateEntity(npcOf(C));
+  useNpc(C);
   check(await mB2 && await mC2, 'B-C eslesti');
   const tB = waitChat(B, /yanıt vermediğin için duel sırasından çıkarıldın/, 9000);
   const tC = waitChat(C, /yanıt vermediğin için duel sırasından çıkarıldın/, 9000);
@@ -275,10 +281,10 @@ async function main() {
   cmd('tp BotA 2 -60 2');
   await sleep(1500);
   const jA2 = waitChat(A, /Duel sırasına girdin/);
-  A.activateEntity(npcOf(A));
+  useNpc(A);
   check(await jA2, 'A tekrar siraya girdi');
   const mA3 = waitChat(A, /BotB oyuncusuyla eşleştin/);
-  B.activateEntity(npcOf(B));
+  useNpc(B);
   check(await mA3, 'A-B eslesti');
   A.chat('/duelsira evet');
   const toA = waitChat(A, /Rakibin süresinde yanıt vermedi/, 9000);
@@ -292,7 +298,7 @@ async function main() {
   cmd('rg flag -w world __global__ pvp allow');
   check(await kick, 'PvP acik bolgede siradan atildi');
   const deny = waitChat(A, /PvP kapalı bir bölgede olmalısın/);
-  A.activateEntity(npcOf(A));
+  useNpc(A);
   check(await deny, 'PvP acik bolgede siraya girilemiyor');
   cmd('rg flag -w world __global__ pvp deny');
   await sleep(1500);
@@ -312,7 +318,7 @@ async function main() {
   cmd('tp BotC -1 -60 2');
   await sleep(1500);
   const full = waitChat(C, /Tüm arenalar şu an dolu/);
-  C.activateEntity(npcOf(C));
+  useNpc(C);
   check(await full, 'Arenalar dolu uyarisi');
   await sleep(3000);
   cmd('setblock 105 -61 105 minecraft:air');

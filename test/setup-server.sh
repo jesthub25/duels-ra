@@ -15,14 +15,19 @@ fi
 echo "Paper: $URL"
 curl -fsSL -o paper.jar "$URL"
 
+# Java 17 ile calisan, 1.20.1 icin resmi surumler: WorldEdit 7.2.15, WorldGuard 7.0.9
 modrinth() {
-  curl -fsSL "https://api.modrinth.com/v2/project/$1/version?game_versions=%5B%221.20.1%22%5D&loaders=%5B%22bukkit%22%5D" \
-    | jq -r '[.[] | select(.version_type=="release")][0] | (.version_number + " " + ([.files[] | select(.primary==true)][0].url))'
+  curl -fsSL "https://api.modrinth.com/v2/project/$1/version" \
+    | jq -r --arg v "$2" '[.[] | select(.version_number | test("^" + $v + "([^0-9]|$)"))][0] | (.version_number + " " + ([.files[] | select(.primary==true)][0].url))'
 }
-read -r WEV WEU <<<"$(modrinth worldedit)"
-read -r WGV WGU <<<"$(modrinth worldguard)"
+read -r WEV WEU <<<"$(modrinth worldedit '7\.2\.15')"
+read -r WGV WGU <<<"$(modrinth worldguard '7\.0\.9')"
 echo "WorldEdit $WEV  $WEU"
 echo "WorldGuard $WGV  $WGU"
+EH=https://maven.enginehub.org/repo/com/sk89q
+[ -n "${WEU:-}" ] && [ "${WEU}" != "null" ] || WEU="$EH/worldedit/worldedit-bukkit/7.2.15/worldedit-bukkit-7.2.15-dist.jar"
+[ -n "${WGU:-}" ] && [ "${WGU}" != "null" ] || WGU="$EH/worldguard/worldguard-bukkit/7.0.9/worldguard-bukkit-7.0.9-dist.jar"
+echo "WE url: $WEU"; echo "WG url: $WGU"
 curl -fsSL -o plugins/WorldEdit.jar "$WEU"
 curl -fsSL -o plugins/WorldGuard.jar "$WGU"
 cp "$JAR" plugins/DuelSira.jar
