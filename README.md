@@ -7,7 +7,7 @@ Paper/Spigot **1.20.1+** · Java 17 · Gereken pluginler: **WorldEdit** (veya FA
 
 ### Duel Sırası (yeni)
 - `/duelsira ekle <mob>` (alias `/duelsıra`): tab'da Minecraft'taki tüm moblar listelenir. Mob, durduğun bloğun **tam ortasına** konur ve **baktığın yöne** döner. AI'si kapalıdır, sağa sola dönmez, hasar almaz, yanmaz, dönüşmez. Ticaret, binme ve kayış kullanılamaz. Biri silerse otomatik geri gelir.
-- NPC'ye **sağ tık** atınca sıraya girersin. Tekrar sağ tık atarsan sıradan çıkarsın.
+- Sıraya **sadece NPC'ye sağ tıklayarak** girilir (komutla girilemez). Tekrar sağ tık atarsan sıradan çıkarsın.
 - Sırada kalmak için WorldGuard **pvp=deny** olan bir bölgede olmalısın. PvP açık bölgeye girersen sıradan atılırsın.
 - Eşleşince oyuncular hemen ışınlanmaz. Sohbette şu soru çıkar: *"X oyuncusuyla eşleştin! Kabul ediyor musun?"* **[EVET] [HAYIR] [ENVANTERİ GÖR]**
   - **ENVANTERİ GÖR:** rakibin envanteri salt okunur bir menüde açılır. Menüden hiçbir eşya alınamaz.
@@ -42,14 +42,14 @@ Paper/Spigot **1.20.1+** · Java 17 · Gereken pluginler: **WorldEdit** (veya FA
 | `/duel setlobby` | Duel sonrası dönüş noktası | duel.admin |
 | `/duel reload` | Config yenile | duel.admin |
 | `/duelsira ekle <mob>` | Sıra NPC'si koy | duelsira.admin |
-| `/duelsira kaldir [id]` | NPC kaldır (id yoksa en yakın) | duelsira.admin |
+| `/duelsira kaldır [npc]` | NPC kaldır (tab: eklenen tüm NPC'ler; boşsa en yakın) | duelsira.admin |
 | `/duelsira liste` | NPC listesi | duelsira.admin |
-| `/duelsira evet` / `hayir` / `envanter` / `ayril` | Sıra eşleşmesi | duelsira.use |
+| `/duelsira evet` / `hayır` / `envanter` / `ayrıl` | Eşleşmeyi yanıtla / sıradan çık | duelsira.use |
 
 `duel.admin.bypass`: duel sırasında komut engelini atlar.
 
 ## Kurulum
-1. `DuelSira-1.0.0.jar` dosyasını `plugins/` klasörüne at. WorldEdit ve WorldGuard da kurulu olmalı.
+1. `DuelSira-1.0.1.jar` dosyasını `plugins/` klasörüne at. WorldEdit ve WorldGuard da kurulu olmalı.
 2. Sunucuyu başlat.
 3. `//wand` ile arena alanını seç, `/duel olustur arena1` yaz, sonra `setspawn1` ve `setspawn2` ile spawnları ayarla.
 4. Lobide WorldGuard ile `pvp deny` olan bir bölge belirle. Örnek: `/rg flag spawn pvp deny`
@@ -66,12 +66,12 @@ Gerekenler: **JDK 17** ve **Maven 3.8+**.
 1. JDK 17 kur ([Adoptium Temurin 17](https://adoptium.net/temurin/releases/?version=17)). Kurulumda "Set JAVA_HOME" seçeneğini işaretle.
 2. Maven kur ([maven.apache.org/download.cgi](https://maven.apache.org/download.cgi)). Zip'i aç ve `bin` klasörünü PATH'e ekle.
 3. Kontrol et: `java -version` (17 görünmeli), `mvn -v`.
-4. `DuelSira-v1.0.0-source.zip` dosyasını aç ve klasöre gir (içinde `pom.xml` olan klasör).
+4. `DuelSira-v1.0.1-source.zip` dosyasını aç ve klasöre gir (içinde `pom.xml` olan klasör).
 5. Derle:
    ```
    mvn clean package
    ```
-6. Jar dosyası şuraya çıkar: `target/DuelSira-1.0.0.jar`
+6. Jar dosyası şuraya çıkar: `target/DuelSira-1.0.1.jar`
 
 IntelliJ IDEA ile: *File → Open → pom.xml → Open as Project*. Sağdaki Maven panelinde *Lifecycle → package* adımına çift tıkla.
 

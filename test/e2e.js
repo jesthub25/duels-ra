@@ -109,7 +109,7 @@ async function click(b, slot, mode = 0) {
 async function main() {
   const done = await waitConsole(/Done \(/, 300000);
   check(done, 'Sunucu acildi');
-  check(consoleLines.some((l) => /DuelSira v1\.0\.0 aktif/.test(l)), 'DuelSira aktif oldu');
+  check(consoleLines.some((l) => /DuelSira v1\.0\.1 aktif/.test(l)), 'DuelSira aktif oldu');
   check(!consoleLines.some((l) => /Error occurred while enabling DuelSira/.test(l)), 'Enable hatasi yok');
 
   check(await cmdExpect('rg flag -w world __global__ pvp deny', /pvp/i), 'WorldGuard global pvp=deny');
@@ -130,12 +130,39 @@ async function main() {
   A.chat('/duelsıra');
   check(await helpAlias, '/duelsıra alias calisiyor');
 
+  // --- Komutla siraya girilemez
+  let tc1 = [];
+  try { tc1 = await A.tabComplete('/duelsira ', true, false, 5000); } catch (e) { log('tabComplete hata', e.message); }
+  const tc1Names = (tc1 || []).map((m) => (typeof m === 'string' ? m : m.match));
+  check(!tc1Names.some((n) => /gir|katil|katıl|join/.test(n)), 'Siraya girme komutu yok (' + tc1Names.join(',') + ')');
+  check(tc1Names.includes('kaldır'), 'Tab: kaldır');
+  const noJoin = waitChat(A, /Duel sırasına girdin/, 2000);
+  A.chat('/duelsira gir');
+  check(!(await noJoin), '/duelsira gir ile siraya girilemedi');
+
   // --- NPC
   cmd('tp BotA 0 -60 0 -90 0');
   await sleep(1500);
   const npcMsg = waitChat(A, /NPC'si oluşturuldu/);
   A.chat('/duelsira ekle villager');
   check(await npcMsg, 'NPC olusturuldu');
+  // ikinci NPC (kaldır tab testi icin)
+  cmd('tp BotA -6 -60 -6 0 0');
+  await sleep(800);
+  const npcMsg2 = waitChat(A, /NPC'si oluşturuldu: npc2/);
+  A.chat('/duelsira ekle cow');
+  check(await npcMsg2, 'Ikinci NPC olusturuldu');
+  let tc2 = [];
+  try { tc2 = await A.tabComplete('/duelsira kaldır ', true, false, 5000); } catch (e) { log('tabComplete hata', e.message); }
+  const tc2Names = (tc2 || []).map((m) => (typeof m === 'string' ? m : m.match));
+  check(tc2Names.includes('npc1') && tc2Names.includes('npc2'), 'Tab: kaldır tum NPCleri listeliyor (' + tc2Names.join(',') + ')');
+  const rm2 = waitChat(A, /NPC kaldırıldı: npc2/);
+  A.chat('/duelsira kaldır npc2');
+  check(await rm2, '/duelsira kaldır npc2');
+  await sleep(800);
+  check(!A.nearestEntity((e) => e.name === 'cow'), 'npc2 dunyadan silindi');
+  cmd('tp BotA 0 -60 0 -90 0');
+  await sleep(1000);
   await sleep(1000);
   let npc = npcOf(A);
   check(npc && Math.abs(npc.position.x - 0.5) < 0.01 && Math.abs(npc.position.z - 0.5) < 0.01, 'NPC blok ortasinda');
@@ -386,7 +413,7 @@ async function main() {
   cmd('tp BotA 3 -60 3');
   await sleep(1500);
   const rm = waitChat(A, /NPC kaldırıldı/);
-  A.chat('/duelsira kaldir npc1');
+  A.chat('/duelsira kaldır npc1');
   check(await rm, 'NPC kaldirildi');
   await sleep(1000);
   check(!npcOf(A), 'NPC dunyadan silindi');

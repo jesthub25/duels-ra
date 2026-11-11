@@ -1,3 +1,9 @@
+## DuelSira v1.0.1
+
+- Duel sırasına **sadece NPC'ye sağ tıklayarak** girilir; komutla girme yolu yoktur (testle doğrulandı).
+- `/duelsira kaldır <npc>`: tab'da eklenmiş tüm duel sırası NPC'leri listelenir (`kaldir` yazımı da çalışır). NPC verilmezse en yakın NPC kaldırılır.
+- Tab tamamlamada Türkçe yazımlar: `hayır`, `ayrıl`, `kaldır`.
+
 ## DuelSira v1.0.0
 
 Paper/Spigot **1.20.1+** · Java 17 · Gereken pluginler: WorldEdit 7.2.15+ (veya FAWE) ve WorldGuard 7.0.9+

@@ -80,7 +80,7 @@ public final class DuelSiraCommand implements TabExecutor {
                             "x", (int) Math.floor(d.getX()), "y", (int) Math.floor(d.getY()), "z", (int) Math.floor(d.getZ()));
                 }
             }
-            default -> Msg.send(p, "usage", "usage", "/duelsira <ekle|kaldir|liste|ayril|evet|hayir|envanter>");
+            default -> Msg.send(p, "usage", "usage", "/duelsira <ekle|kaldır|liste|ayrıl|evet|hayır|envanter>");
         }
         return true;
     }
@@ -97,14 +97,19 @@ public final class DuelSiraCommand implements TabExecutor {
         List<String> out = new ArrayList<>();
         boolean admin = p.hasPermission("duelsira.admin");
         if (args.length == 1) {
-            List<String> opts = new ArrayList<>(Arrays.asList("evet", "hayir", "envanter", "ayril"));
-            if (admin) opts.addAll(Arrays.asList("ekle", "kaldir", "liste"));
-            StringUtil.copyPartialMatches(args[0], opts, out);
+            // Siraya girmek icin komut YOK: sadece NPC'ye sag tik.
+            List<String> opts = new ArrayList<>(Arrays.asList("evet", "hayır", "envanter", "ayrıl"));
+            if (admin) opts.addAll(Arrays.asList("ekle", "kaldır", "liste"));
+            String typed = norm(args[0]);
+            for (String o : opts) {
+                if (norm(o).startsWith(typed)) out.add(o);
+            }
         } else if (args.length == 2 && admin) {
             String s = norm(args[0]);
             if (s.equals("ekle")) {
                 StringUtil.copyPartialMatches(args[1], NpcManager.getMobNames(), out);
             } else if (s.equals("kaldir")) {
+                // Eklenmis tum duel sirasi NPC'leri
                 List<String> ids = new ArrayList<>();
                 for (NpcManager.NpcData d : plugin.getNpcManager().list()) ids.add(d.getId());
                 StringUtil.copyPartialMatches(args[1], ids, out);
