@@ -92,8 +92,9 @@ jobs:
             server/logs/latest.log
 
   release:
+    name: Release (pom.xml surumu, yoksa olusturulur)
     needs: [build, e2e]
-    if: startsWith(github.ref, 'refs/tags/v')
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -105,13 +106,17 @@ jobs:
           name: DuelSira
           path: dist
 
-      - name: Source zip
-        run: git archive --format=zip --prefix=DuelSira/ -o "dist/DuelSira-${GITHUB_REF_NAME}-source.zip" HEAD
-
-      - name: Create release
+      - name: Create release if missing
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          VERSION=$(grep -m1 -oP '(?<=<version>)[^<]+' pom.xml)
+          TAG="v${VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "$TAG zaten var, atlaniyor."
+            exit 0
+          fi
+          git archive --format=zip --prefix=DuelSira/ -o "dist/DuelSira-${TAG}-source.zip" HEAD
           NOTES="RELEASE_NOTES.md"
-          [ -f "$NOTES" ] || echo "${GITHUB_REF_NAME}" > "$NOTES"
-          gh release create "${GITHUB_REF_NAME}" dist/* --title "DuelSira ${GITHUB_REF_NAME}" --notes-file "$NOTES"
+          [ -f "$NOTES" ] || echo "$TAG" > "$NOTES"
+          gh release create "$TAG" dist/* --target "${GITHUB_SHA}" --title "DuelSira ${TAG}" --notes-file "$NOTES"
