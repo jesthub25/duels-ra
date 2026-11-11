@@ -1,0 +1,37 @@
+name: DuelSira
+version: '${project.version}'
+main: org.jestron.duelsira.DuelSira
+api-version: '1.20'
+author: Jestron
+description: Duel ve Duel Sirasi (NPC + WorldGuard) plugini
+depend: [WorldEdit, WorldGuard]
+
+commands:
+  duel:
+    description: Ana duel komutu
+    usage: /duel [oyuncu|kabul|reddet|toggle|olustur|sil|arena|kit|gui|setlobby|reload]
+    aliases: [d]
+  duelsira:
+    description: Duel sirasi komutu
+    usage: /duelsira [ekle|kaldir|liste|ayril|evet|hayir|envanter]
+    aliases: [duelsıra]
+
+permissions:
+  duel.use:
+    description: Duel gonderme / kabul etme
+    default: true
+  duel.toggle:
+    description: Duel isteklerini acma/kapama
+    default: true
+  duel.admin:
+    description: Duel admin komutlari
+    default: op
+  duel.admin.bypass:
+    description: Duel sirasinda komut engelini atlar
+    default: false
+  duelsira.use:
+    description: Duel sirasina girme
+    default: true
+  duelsira.admin:
+    description: Duel sirasi NPC ekleme/kaldirma
+    default: op

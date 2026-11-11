@@ -1,0 +1,288 @@
+# ============================================================
+#  DuelSira - Jestron  |  Paper/Spigot 1.20.1+
+# ============================================================
+
+settings:
+  # Normal duel isteginin gecerlilik suresi (saniye)
+  request-timeout: 30
+  # Duel baslamadan once geri sayim (saniye). Bu surede oyuncular yerinden kipirdayamaz.
+  countdown: 5
+  # Esyalar korunan / kitli duellolarda kazananin arenadan cikarilma gecikmesi (saniye)
+  end-delay: 3
+  # "Esyalar duser" modunda kazananin yere dusen esyalari toplamasi icin sure (saniye)
+  loot-time: 15
+  # Oyuncularin arenadan cikip cikmadigi kac tick'te bir kontrol edilsin (20 tick = 1 sn)
+  border-check-interval: 10
+  # Ayni anda en fazla kac duel (0 = sinirsiz)
+  max-concurrent-duels: 50
+  # Duel bitince calistirilacak komut (oyuncu adina). Bos birakilirsa sadece lobby'e isinlanir.
+  # /duel setlobby ile ayarlanan lobby varsa once oraya isinlanir, sonra bu komut calisir.
+  hub-command: "hub"
+  # Olen oyuncu otomatik respawn olsun mu
+  auto-respawn: true
+  # Duel sirasinda ender pearl yasak mi
+  block-ender-pearl: true
+  # Duel sirasinda kullanilabilecek komutlar (duel, d, duelsira her zaman serbest)
+  allowed-commands:
+    - duel
+    - d
+    - duelsira
+  # Arena sifirlama surelerini konsola yaz
+  debug: false
+
+# Normal duellolarda (kendi envanteri) kural varsayilanlari
+defaults:
+  allow-ladder: true
+  allow-slab: true
+  allow-button: true
+  allow-cobweb: true
+  allow-elytra: true
+
+# Duel sirasi (NPC'ye sag tik)
+queue:
+  # Eslesince EVET/HAYIR icin sure (saniye). Yanit vermeyen siradan cikarilir.
+  response-time: 15
+  # Sira duellolarinda (kendi envanteri, kuralsiz) esyalar yere dussun mu
+  items-drop: true
+  # NPC'ye ust uste tiklama korumasi (milisaniye)
+  click-cooldown-ms: 1000
+
+npc:
+  name: "&6&lDUEL SIRASI &7(Sağ Tık)"
+
+messages:
+  prefix: "&8[&cDuel&8] &r"
+  no-permission: "&cBunun için yetkin yok."
+  usage: "&cKullanım: &f{usage}"
+  reloaded: "&aDuelSira yeniden yüklendi."
+  player-not-found: "&cOyuncu bulunamadı."
+  word-yes: "&aEvet"
+  word-no: "&cHayır"
+  word-on: "&aAçık"
+  word-off: "&cKapalı"
+  none: "Yok"
+  unknown: "Bilinmiyor"
+  own-inventory: "Kendi Envanteri"
+  kit-label: "Kit: {kit}"
+  mode-drop: "&cEşyalar Düşer"
+  mode-keep: "&aEşyalar Korunur"
+  arena-random: "Rastgele"
+  type-normal: "Normal Duel"
+  type-queue: "Duel Sırası"
+
+  # ---- Normal duel
+  duel-self: "&cKendine duel atamazsın."
+  no-arena: "&cHiç hazır arena yok! Önce bir arena oluşturun."
+  you-are-busy: "&cŞu an duelde veya duel sırası eşleşmesindesin."
+  target-busy: "&e{player} &cşu an duelde veya eşleşmede."
+  requests-disabled: "&e{player} &cduel isteklerini kapatmış."
+  target-has-request: "&e{player} &coyuncusunun zaten bekleyen bir isteği var."
+  request-sent: "&e{player} &aadlı oyuncuya duel isteği gönderildi."
+  request-received: "&e&l{player} &asana duel teklifi gönderdi!"
+  request-info: "&7Kit: &f{kit} &8| &7Mod: {mode} &8| &7Arena: &f{arena}"
+  request-rules: "&7Kurallar: Merdiven {ladder}&7, Slab {slab}&7, Buton {button}&7, Ağ {cobweb}&7, Elytra {elytra}"
+  request-timeout-info: "&7Bu istek &e{seconds} &7saniye içinde zaman aşımına uğrayacak."
+  request-expired-sender: "&cDuel isteğin zaman aşımına uğradı."
+  request-expired-target: "&cGelen duel isteği zaman aşımına uğradı."
+  request-cancelled: "&cSana gelen duel isteği iptal edildi."
+  request-denied-target: "&eDuel teklifini reddettin."
+  request-denied-sender: "&e{player} &cduel teklifini reddetti."
+  no-request: "&cAktif bir duel isteğin yok."
+  button-accept: "&a&l[KABUL ET]"
+  button-accept-hover: "&aDuelloyu kabul et"
+  button-deny: "&c&l[REDDET]"
+  button-deny-hover: "&cDuelloyu reddet"
+  toggle-on: "&aDuel isteklerini açtın."
+  toggle-off: "&cDuel isteklerini kapattın."
+  server-full: "&cŞu an çok fazla duel var, biraz sonra tekrar dene."
+  arena-unavailable-random: "&eİstenen arena müsait değil, rastgele boş arena aranıyor..."
+  arenas-full: "&cTüm arenalar şu an dolu! Biraz sonra tekrar dene."
+  arena-not-ready: "&cArena hazır değil."
+  duel-start-failed: "&cDuel başlatılamadı (ışınlanma engellendi)."
+  duel-send-cancelled: "&cDuel gönderme iptal edildi."
+
+  # ---- Duel akisi
+  duel-starting: "&aDuel başlıyor! &7Rakip: &e{player} &7| Arena: &e{arena}"
+  countdown-title: "&c&l{seconds}"
+  countdown-subtitle: "&7Hazırlan!"
+  fight-title: "&a&lSAVAŞ!"
+  win-title: "&a&lKAZANDIN!"
+  win-subtitle: "&7{player} &7yenildi"
+  lose-title: "&c&lKAYBETTİN!"
+  lose-subtitle: "&7Kazanan: &e{player}"
+  duel-won: "&a&lDuelloyu kazandın! &7({player})"
+  duel-lost: "&cDuelloyu kaybettin. &7Kazanan: &e{player}"
+  opponent-quit: "&e{player} &coyundan çıktı. &aKazandın!"
+  loot-time: "&eYere düşen eşyaları toplamak için &6{seconds} &esaniyen var!"
+  loot-actionbar: "&eEşyaları topla! &6{seconds} &esn sonra lobiye gönderileceksin"
+  duel-cancelled: "&cDuel başlamadan iptal edildi."
+  duel-cancelled-quit: "&cRakip çıktığı için duel iptal edildi."
+  duel-cancelled-reload: "&cSunucu/plugin yeniden başlatıldığı için duel iptal edildi."
+  border-warning: "&c&lUYARI: &cDuel alanından çıkamazsın!"
+  command-blocked: "&cDuel sırasında komut kullanamazsın."
+  pearl-blocked: "&cDuel sırasında ender pearl kullanamazsın!"
+  rule-blocked: "&cBu duelloda yasak: &e{rule}"
+  rule-ladder: "Merdiven"
+  rule-slab: "Basamak (Slab)"
+  rule-button: "Buton"
+  rule-cobweb: "Örümcek Ağı"
+  rule-elytra: "Elytra"
+  rule-line: "&7{rule}: {state}"
+
+  # ---- Duel sirasi
+  queue-joined: "&aDuel sırasına girdin! &7(Sırada {size} kişi) &8- &7Çıkmak için NPC'ye tekrar tıkla."
+  queue-left: "&eDuel sırasından çıktın."
+  queue-not-in: "&cDuel sırasında değilsin."
+  queue-already: "&cZaten duel sırasındasın."
+  queue-left-pvp: "&cPvP açık bir bölgeye girdiğin için duel sırasından çıkarıldın."
+  queue-left-duel: "&eBaşka bir duel başladığı için duel sırasından çıkarıldın."
+  queue-need-safe-region: "&cDuel sırasına girmek için PvP kapalı bir bölgede olmalısın."
+  queue-no-arena: "&cBoş arena yok! Hiç hazır arena bulunmuyor."
+  queue-arenas-full: "&eTüm arenalar şu an dolu. Bir arena boşalınca eşleşeceksin."
+  queue-respond-first: "&cÖnce eşleşmeyi yanıtla: &a/duelsira evet &7veya &c/duelsira hayir"
+  queue-matched: "&e&l{player} &aoyuncusuyla eşleştin! &fKabul ediyor musun?"
+  queue-respond-time: "&7Yanıt vermek için &e{seconds} &7saniyen var. Yanıt vermezsen sıradan çıkarılırsın."
+  button-yes: "&a&l[EVET]"
+  button-yes-hover: "&aEşleşmeyi kabul et"
+  button-no: "&c&l[HAYIR]"
+  button-no-hover: "&cEşleşmeyi reddet (sıradan çıkarsın)"
+  button-inventory: "&b&l[ENVANTERİ GÖR]"
+  button-inventory-hover: "&b{player} &7oyuncusunun envanterine bak"
+  queue-no-match: "&cAktif bir duel sırası eşleşmen yok."
+  queue-already-accepted: "&eZaten kabul ettin, rakibin bekleniyor."
+  queue-you-accepted: "&aKabul ettin! &7Rakibin bekleniyor..."
+  queue-opponent-accepted: "&e{player} &aeşleşmeyi kabul etti."
+  queue-you-declined: "&cEşleşmeyi reddettin ve duel sırasından çıktın."
+  queue-opponent-declined: "&e{player} &ceşleşmeyi reddetti."
+  queue-opponent-left: "&cRakibin eşleşmeden ayrıldı."
+  queue-opponent-timeout: "&cRakibin süresinde yanıt vermedi."
+  queue-timeout-removed: "&cSüresinde yanıt vermediğin için duel sırasından çıkarıldın."
+  queue-requeued: "&aTekrar duel sırasının başına alındın, yeni rakip bekleniyor..."
+  queue-start-failed: "&cDuel başlatılamadı, tekrar sıraya alındın."
+  queue-actionbar: "&aDuel sırasındasın &8| &7Sıra: &e{position}&7/&e{size} &8| &7Rakip aranıyor..."
+  queue-actionbar-full: "&cTüm arenalar dolu! &7Boş arena bekleniyor... &8(&7Sırada {size} kişi&8)"
+
+  # ---- Arena
+  arena-invalid-name: "&cArena adı sadece a-z, 0-9, _ ve - içerebilir (en fazla 32 karakter)."
+  arena-exists: "&cBu isimde bir arena zaten var: &e{arena}"
+  arena-no-selection: "&cÖnce WorldEdit ile bir alan seç! (//wand)"
+  arena-create-error: "&cArena kaydedilirken hata oluştu, konsola bak."
+  arena-created: "&aArena &e{arena} &aoluşturuldu ve şematiği kaydedildi. &7({blocks} blok) &aŞimdi spawnları ayarla: &f/duel arena {arena} setspawn1/setspawn2"
+  arena-not-found: "&cArena bulunamadı: &e{arena}"
+  arena-busy: "&cArena şu an kullanımda: &e{arena}"
+  arena-deleted: "&aArena silindi: &e{arena}"
+  arena-spawn-outside: "&cSpawn ayarlamak için arena sınırları içinde olmalısın!"
+  arena-spawn-set: "&aArena &e{arena} &aspawn {spawn} ayarlandı."
+  arena-list-header: "&e--- Arenalar ---"
+  arena-list-line: "&f{arena} &8- {state} &8- &7Hazır: {ready}"
+  state-free: "&aBoş"
+  state-reserved: "&eAyrıldı"
+  state-in_use: "&cKullanımda"
+  state-resetting: "&6Sıfırlanıyor"
+  lobby-set: "&aLobi konumu ayarlandı."
+
+  # ---- Kit
+  kit-invalid-name: "&cKit adı sadece a-z, 0-9, _ ve - içerebilir."
+  kit-exists: "&cBu isimde bir kit zaten var: &e{kit}"
+  kit-created: "&aKit &e{kit} &aenvanterinden oluşturuldu."
+  kit-deleted: "&aKit silindi: &e{kit}"
+  kit-not-found: "&cKit bulunamadı: &e{kit}"
+
+  # ---- NPC
+  npc-created: "&aDuel sırası NPC'si oluşturuldu: &e{id} &7({type})"
+  npc-spawn-failed: "&cNPC oluşturulamadı (spawn engellenmiş olabilir)."
+  npc-invalid-type: "&cGeçersiz mob: &e{type}"
+  npc-none-near: "&cYakınında (5 blok) duel sırası NPC'si yok."
+  npc-removed: "&aNPC kaldırıldı: &e{id}"
+  npc-not-found: "&cNPC bulunamadı: &e{id}"
+  npc-list-header: "&e--- Duel Sırası NPC'leri ({count}) ---"
+  npc-list-line: "&f{id} &8- &7{type} &8- &7{world} {x} {y} {z}"
+
+  # ---- GUI
+  gui-send-title: "&8Duel Ayarları &7» &8{player}"
+  gui-send: "&a&lDUEL GÖNDER"
+  gui-send-lore: "&7Seçili ayarlarla duel teklifi gönder."
+  gui-cancel: "&c&lİPTAL"
+  gui-cancel-lore: "&7Duel göndermeyi iptal et."
+  gui-arena-random: "&dArena: &fRastgele"
+  gui-arena-selected: "&dArena: &b{arena}"
+  gui-click-change: "&7Değiştirmek için tıkla."
+  gui-click-select: "&7Seçmek için tıkla."
+  gui-click-detail: "&eDetay için tıkla!"
+  gui-kit-own: "&eKit: &fKendi Envanterin"
+  gui-kit-selected: "&eKit: &a{kit}"
+  gui-drop-kit: "&7Kitli duelde eşyalar korunur"
+  gui-drop-on: "&c&lEşyalar Düşer &7(Aktif)"
+  gui-drop-on-lore: "&7Kapatmak için tıkla."
+  gui-drop-off: "&a&lEşyalar Korunur &7(Aktif)"
+  gui-drop-off-lore: "&7Açmak için tıkla."
+  gui-rules: "&6&lDuel Kuralları"
+  gui-rules-lore: "&7Sadece kendi envanterinle geçerli."
+  gui-rules-info: "&7Tıklayarak aç/kapat."
+  gui-rules-title: "&8Duel Kuralları"
+  gui-rule-on: "&a&lAÇIK &7- kapatmak için tıkla"
+  gui-rule-off: "&c&lKAPALI &7- açmak için tıkla"
+  gui-kit-title: "&8Kit Seçimi"
+  gui-kit-own-option: "&cKendi Envanterini Kullan"
+  gui-kit-option: "&bKit: &f{kit}"
+  gui-arena-title: "&8Arena Seçimi"
+  gui-arena-random-option: "&dRastgele Arena"
+  gui-arena-option: "&eArena: &f{arena}"
+  gui-arena-free: "&aMüsait"
+  gui-arena-busy: "&cKullanımda"
+  gui-back: "&7&lGeri"
+  gui-close: "&c&lKapat"
+  gui-prev: "&e&lÖnceki Sayfa"
+  gui-next: "&e&lSonraki Sayfa"
+  gui-page-info: "&eSayfa {page}/{pages}"
+  gui-total: "&7Toplam {total} kayıt"
+  gui-history-title: "&8Duel Geçmişi {page}/{pages}"
+  gui-detail-title: "&8Duel Detayı #{id}"
+  gui-detail-info: "&e&lDuel Bilgileri"
+  gui-detail-hint: "&eOyuncu kafasına tıkla: envanterini gör"
+  gui-detail-head: "&7Envanterini görmek için tıkla"
+  gui-view-title: "&8{player} &7- Envanter (sadece bakış)"
+  view-helmet: "&7Kask yok"
+  view-chestplate: "&7Göğüslük yok"
+  view-leggings: "&7Pantolon yok"
+  view-boots: "&7Bot yok"
+  view-offhand: "&7Sol el boş"
+  history-item: "&eDuel #{id}"
+  history-date: "&7Tarih: &f{date}"
+  history-type: "&7Tür: &f{type}"
+  history-winner: "&a&lKAZANAN: &a{player}"
+  history-loser: "&c&lKAYBEDEN: &c{player}"
+  history-players: "&7Oyuncular: &f{p1} &7vs &f{p2}"
+  history-arena: "&7Arena: &f{arena}"
+  history-kit: "&7Kit: &f{kit}"
+  history-mode: "&7Mod: {mode}"
+  history-duration: "&7Süre: &f{seconds} sn"
+  history-not-found: "&cKayıt bulunamadı."
+  history-inventory-error: "&cKayıtlı envanter okunamadı."
+
+  help-duel:
+    - "&e&m-----&r &c&lDUEL &e&m-----"
+    - "&b/duel <oyuncu> &7- Duel gönder"
+    - "&b/duel kabul <oyuncu> &7- İsteği kabul et"
+    - "&b/duel reddet [oyuncu] &7- İsteği reddet"
+    - "&b/duel toggle &7- İstekleri aç/kapat"
+  help-duel-admin:
+    - "&c/duel olustur <isim> &7- WorldEdit seçiminden arena oluştur (şematik kaydedilir)"
+    - "&c/duel sil <isim> &7- Arena sil"
+    - "&c/duel arena <isim> <setspawn1|setspawn2> &7- Spawn ayarla"
+    - "&c/duel arenalar &7- Arena listesi"
+    - "&c/duel kit <olustur|sil> <isim> &7- Kit yönetimi"
+    - "&c/duel gui &7- Duel geçmişi"
+    - "&c/duel setlobby &7- Duel sonrası dönüş konumu"
+    - "&c/duel reload &7- Config yenile"
+  help-queue:
+    - "&e&m-----&r &6&lDUEL SIRASI &e&m-----"
+    - "&7Duel sırasına girmek için PvP kapalı bölgede NPC'ye sağ tıkla."
+    - "&b/duelsira evet &7- Eşleşmeyi kabul et"
+    - "&b/duelsira hayir &7- Eşleşmeyi reddet"
+    - "&b/duelsira envanter &7- Rakibin envanterine bak"
+    - "&b/duelsira ayril &7- Sıradan çık"
+  help-queue-admin:
+    - "&c/duelsira ekle <mob> &7- Bulunduğun bloğun ortasına NPC koy"
+    - "&c/duelsira kaldir [id] &7- NPC kaldır (id yoksa en yakın)"
+    - "&c/duelsira liste &7- NPC listesi"
