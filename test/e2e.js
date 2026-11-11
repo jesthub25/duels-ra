@@ -330,6 +330,54 @@ async function main() {
   r = await cmdExpect('execute if block 105 -61 105 minecraft:diamond_block', /Test (passed|failed)/);
   check(r && /passed/.test(r), 'Normal duel sonrasi arena geri yuklendi');
 
+  // --- Kitli duel: envanter takasi ve geri yukleme
+  await sleep(1500);
+  cmd('clear BotA');
+  cmd('give BotA minecraft:iron_sword 1');
+  await sleep(800);
+  const kc = waitChat(A, /Kit testkit envanterinden oluşturuldu/);
+  A.chat('/duel kit olustur testkit');
+  check(await kc, 'Kit olusturuldu');
+  cmd('clear BotA');
+  cmd('give BotA minecraft:apple 2');
+  cmd('clear BotB');
+  cmd('give BotB minecraft:gold_ingot 3');
+  await sleep(1200);
+  const swordId = A.registry.itemsByName.iron_sword.id;
+  const goldId = A.registry.itemsByName.gold_ingot.id;
+  const appleId = A.registry.itemsByName.apple.id;
+  let kw = waitWindow(A);
+  A.chat('/duel BotB');
+  let k1 = await kw;
+  check(k1, 'Kitli duel: gonderme menusu');
+  kw = waitWindow(A);
+  await click(A, 13, 0);
+  const k2 = await kw;
+  check(k2 && /Kit/.test(JSON.stringify(k2.title)), 'Kit secim menusu acildi');
+  kw = waitWindow(A);
+  await click(A, 1, 0);
+  const k3 = await kw;
+  check(k3, 'Kit secildi, ana menuye donuldu');
+  const kreq = waitChat(B, /BotA sana duel teklifi gönderdi/);
+  await click(A, 0, 0);
+  check(await kreq, 'Kitli duel istegi gitti');
+  const kst = waitChat(B, /Duel başlıyor/);
+  B.chat('/duel kabul BotA');
+  check(await kst, 'Kitli duel basladi');
+  await sleep(1500);
+  check(B.inventory.count(swordId) === 1 && B.inventory.count(goldId) === 0, 'Kit verildi (B kendi esyalari yerine kit)');
+  check(A.inventory.count(swordId) === 1 && A.inventory.count(appleId) === 0, 'Kit verildi (A)');
+  check(fs.readdirSync(path.join(SERVER_DIR, 'plugins/DuelSira/states')).length === 2, 'Envanter yedegi diske yazildi');
+  await sleep(2500);
+  const kwon = waitChat(A, /Duelloyu kazandın/);
+  cmd('kill BotB');
+  check(await kwon, 'Kitli duel bitti');
+  await sleep(4500);
+  check(B.inventory.count(goldId) === 3 && B.inventory.count(swordId) === 0, 'Kaybedenin eski envanteri geri geldi');
+  check(A.inventory.count(appleId) === 2 && A.inventory.count(swordId) === 0, 'Kazananin eski envanteri geri geldi');
+  check(fs.readdirSync(path.join(SERVER_DIR, 'plugins/DuelSira/states')).length === 0, 'Envanter yedekleri temizlendi');
+  check(!inArena(A) && !inArena(B), 'Kitli duel sonrasi arenadan cikildi');
+
   // --- NPC korumasi
   cmd('kill @e[type=minecraft:villager]');
   await sleep(2000);
