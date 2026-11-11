@@ -24,6 +24,7 @@ public final class MenuListener implements Listener {
 
     private final DuelSira plugin;
     private final Map<UUID, Long> lastClick = new HashMap<>();
+    private final Map<UUID, Menu> lastMenu = new HashMap<>();
 
     public MenuListener(DuelSira plugin) {
         this.plugin = plugin;
@@ -46,10 +47,12 @@ public final class MenuListener implements Listener {
         if (!(who instanceof Player p)) return;
         int raw = e.getRawSlot();
         if (raw < 0 || raw >= top.getSize()) return;
+        // Ayni menude cok hizli cift tiklamayi yok say (yeni acilan menu etkilenmez)
         long now = System.currentTimeMillis();
         Long last = lastClick.get(p.getUniqueId());
-        if (last != null && now - last < CLICK_DEBOUNCE_MS) return;
+        if (last != null && lastMenu.get(p.getUniqueId()) == menu && now - last < CLICK_DEBOUNCE_MS) return;
         lastClick.put(p.getUniqueId(), now);
+        lastMenu.put(p.getUniqueId(), menu);
         // Envanter islemleri tiklama olayinin icinde yapilmaz, bir sonraki tick'e ertelenir
         Bukkit.getScheduler().runTask(plugin, () -> {
             if (!p.isOnline()) return;
@@ -76,5 +79,6 @@ public final class MenuListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent e) {
         lastClick.remove(e.getPlayer().getUniqueId());
+        lastMenu.remove(e.getPlayer().getUniqueId());
     }
 }
