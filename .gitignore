@@ -5,3 +5,7 @@ target/
 .DS_Store
 dependency-reduced-pom.xml
 build.log
+test/node_modules/
+test/package-lock.json
+server/
+dist/

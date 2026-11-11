@@ -1,0 +1,8 @@
+{
+  "name": "duelsira-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "mineflayer": "^4.23.0"
+  }
+}

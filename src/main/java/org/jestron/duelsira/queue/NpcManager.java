@@ -179,7 +179,8 @@ public final class NpcManager {
 
     public void create(Player p, EntityType type) {
         Location pl = p.getLocation();
-        Location loc = new Location(pl.getWorld(), pl.getBlockX() + 0.5, pl.getY(), pl.getBlockZ() + 0.5, pl.getYaw(), 0f);
+        float yaw = Location.normalizeYaw(pl.getYaw());
+        Location loc = new Location(pl.getWorld(), pl.getBlockX() + 0.5, pl.getY(), pl.getBlockZ() + 0.5, yaw, 0f);
         int n = 1;
         while (npcs.containsKey("npc" + n)) n++;
         String id = "npc" + n;
@@ -331,7 +332,8 @@ public final class NpcManager {
             return true;
         }
         Location l = current.getLocation();
-        if (!l.getWorld().equals(w) || l.distanceSquared(target) > 0.0025 || Math.abs(l.getYaw() - d.yaw) > 0.5f) {
+        float yawDiff = Math.abs(Location.normalizeYaw(l.getYaw() - d.yaw));
+        if (!w.equals(l.getWorld()) || l.distanceSquared(target) > 0.0025 || yawDiff > 0.5f) {
             current.teleport(target);
             current.setRotation(d.yaw, 0f);
         }
