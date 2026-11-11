@@ -65,7 +65,11 @@ function makeBot(name) {
     });
     b.on('kicked', (r) => console.log(`[${name}] KICKED`, r));
     b.on('error', (e) => console.log(`[${name}] ERROR`, e && e.message));
-    b.once('spawn', () => resolve(b));
+    b.once('spawn', () => {
+      // Botlar yerinde dursun: fizik kapali (geri itme/isinlanma sonrasi gecersiz paket gondermesinler)
+      b.physicsEnabled = false;
+      resolve(b);
+    });
     setTimeout(() => reject(new Error(name + ' baglanamadi')), 60000);
   });
 }
@@ -192,6 +196,7 @@ async function main() {
   check(await dB, 'Reddeden siradan cikti');
 
   // --- red engeli: B tekrar girer, A ile eslesmemeli
+  await sleep(1200); // NPC tiklama bekleme suresi
   const jB = waitChat(B, /Duel sırasına girdin/);
   useNpc(B);
   check(await jB, 'B tekrar siraya girdi');
@@ -239,13 +244,8 @@ async function main() {
   await sleep(3000); // geri sayim 3 sn
 
   const hp0 = C.health;
-  const target = A.players.BotC && A.players.BotC.entity;
-  if (target) {
-    A.attack(target);
-    await sleep(700);
-    A.attack(target);
-  }
-  await sleep(1000);
+  cmd('damage BotC 4 minecraft:player_attack by BotA');
+  await sleep(1500);
   check(C.health < hp0, 'Rakipler birbirine vurabiliyor (WG pvp deny olsa bile) hp ' + hp0 + '->' + C.health);
 
   check(await cmdExpect('setblock 105 -61 105 minecraft:air', /Changed the block/), 'Arena bozuldu (1)');
