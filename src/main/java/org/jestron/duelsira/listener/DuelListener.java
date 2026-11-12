@@ -215,7 +215,13 @@ public final class DuelListener implements Listener {
         Msg.send(p, "command-blocked");
     }
 
+    private Object allowedFor;
+    private Set<String> allowedCache;
+
+    /** Izinli komutlar; config yeniden yuklenene kadar onbellekte. */
     private Set<String> allowedCommands() {
+        Object cfg = plugin.getConfig();
+        if (allowedCache != null && allowedFor == cfg) return allowedCache;
         List<String> list = plugin.getConfig().getStringList("settings.allowed-commands");
         Set<String> set = new HashSet<>();
         for (String s : list) set.add(s.toLowerCase(Locale.ROOT).replace("/", ""));
@@ -223,6 +229,8 @@ public final class DuelListener implements Listener {
         set.add("d");
         set.add("duelsira");
         set.add("duelsıra");
+        allowedFor = cfg;
+        allowedCache = set;
         return set;
     }
 

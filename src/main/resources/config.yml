@@ -30,6 +30,20 @@ settings:
   # Arena sifirlama surelerini konsola yaz
   debug: false
 
+# Duel sonu arena sifirlama (schem)
+arena-reset:
+  # Akilli sifirlama: arena once arka planda schem ile karsilastirilir.
+  #  - Hicbir blok degismediyse hicbir sey yapistirilmaz (sunucu hic yorulmaz).
+  #  - Degisiklik varsa sadece degisen 16x16x16 bolumler yapistirilir.
+  # false = her duel sonunda tum arena yapistirilir (eski davranis).
+  smart: true
+  # Degisen bolum orani bunu gecerse tum arena tek seferde yapistirilir (0.0 - 1.0)
+  full-threshold: 0.6
+  # Guvenlik: her N sifirlamada bir tum arena yapistirilir (0 = kapali)
+  full-reset-every: 50
+  # Ayni tick'te en fazla kac kontrol/yapistirma islemi (ayni anda biten duellolar lag yapmasin)
+  max-operations-per-tick: 1
+
 # Normal duellolarda (kendi envanteri) kural varsayilanlari
 defaults:
   allow-ladder: true
@@ -180,6 +194,7 @@ messages:
   state-in_use: "&cKullanımda"
   state-resetting: "&6Sıfırlanıyor"
   lobby-set: "&aLobi konumu ayarlandı."
+  arena-reset-queued: "&aArena &e{arena} &atam sıfırlama için sıraya alındı."
 
   # ---- Kit
   kit-invalid-name: "&cKit adı sadece a-z, 0-9, _ ve - içerebilir."
@@ -270,6 +285,7 @@ messages:
     - "&c/duel olustur <isim> &7- WorldEdit seçiminden arena oluştur (şematik kaydedilir)"
     - "&c/duel sil <isim> &7- Arena sil"
     - "&c/duel arena <isim> <setspawn1|setspawn2> &7- Spawn ayarla"
+    - "&c/duel arena <isim> sifirla &7- Arenayı zorla tam sıfırla"
     - "&c/duel arenalar &7- Arena listesi"
     - "&c/duel kit <olustur|sil> <isim> &7- Kit yönetimi"
     - "&c/duel gui &7- Duel geçmişi"

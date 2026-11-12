@@ -4,6 +4,7 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const mineflayer = require('mineflayer');
+const { Vec3 } = require('vec3');
 
 const SERVER_DIR = path.join(__dirname, '..', 'server');
 const results = [];
@@ -109,7 +110,7 @@ async function click(b, slot, mode = 0) {
 async function main() {
   const done = await waitConsole(/Done \(/, 300000);
   check(done, 'Sunucu acildi');
-  check(consoleLines.some((l) => /DuelSira v1\.0\.1 aktif/.test(l)), 'DuelSira aktif oldu');
+  check(consoleLines.some((l) => /DuelSira v1\.1\.0 aktif/.test(l)), 'DuelSira aktif oldu');
   check(!consoleLines.some((l) => /Error occurred while enabling DuelSira/.test(l)), 'Enable hatasi yok');
 
   check(await cmdExpect('rg flag -w world __global__ pvp deny', /pvp/i), 'WorldGuard global pvp=deny');
@@ -171,7 +172,9 @@ async function main() {
   // --- arena
   cmd('tp BotA 110 -60 110');
   await sleep(2500);
-  check(await cmdExpect('setblock 105 -61 105 minecraft:diamond_block', /Changed the block|Could not set/), 'Arena isaret blogu');
+  check(await cmdExpect('setblock 115 -61 115 minecraft:diamond_block', /Changed the block|Could not set/), 'Arena isaret blogu');
+  check(await cmdExpect('setblock 108 -60 110 minecraft:chest{Items:[{Slot:0b,id:"minecraft:diamond",Count:1b}]}', /Changed the block/), 'Arenaya elmasli sandik');
+  const smartReady = waitConsole(/Arena 'test1' akilli sifirlama hazir/, 20000);
   const p1 = waitChat(A, /position set|pozisyon/i);
   A.chat('//pos1 100,-61,100');
   await p1;
@@ -181,6 +184,7 @@ async function main() {
   const created = waitChat(A, /oluşturuldu ve şematiği/);
   A.chat('/duel olustur test1');
   check(await created, 'Arena olusturuldu');
+  check(await smartReady, 'Akilli sifirlama tablosu hazirlandi');
   cmd('tp BotA 109.5 -60 110.5 -90 0');
   await sleep(800);
   const s1 = waitChat(A, /spawn 1 ayarlandı/);
@@ -275,9 +279,23 @@ async function main() {
   await sleep(1500);
   check(C.health < hp0, 'Rakipler birbirine vurabiliyor (WG pvp deny olsa bile) hp ' + hp0 + '->' + C.health);
 
-  check(await cmdExpect('setblock 105 -61 105 minecraft:air', /Changed the block/), 'Arena bozuldu (1)');
-  check(await cmdExpect('setblock 106 -60 106 minecraft:gold_block', /Changed the block/), 'Arena bozuldu (2)');
+  // Sandiktan elmasi al (NBT degisikligi olayla takip edilmeli)
+  const chestWin = waitWindow(A);
+  try { await A.activateBlock(A.blockAt(new Vec3(108, -60, 110))); } catch (e) { log('activateBlock', e.message); }
+  const cw = await chestWin;
+  check(cw, 'Arenadaki sandik acildi');
+  if (cw) {
+    await click(A, 0, 1);
+    await sleep(500);
+    A.closeWindow(cw);
+  }
+  await sleep(500);
+  check(A.inventory.count(A.registry.itemsByName.diamond.id) === 1, 'Sandiktan elmas alindi');
 
+  check(await cmdExpect('setblock 115 -61 115 minecraft:air', /Changed the block/), 'Arena bozuldu (1)');
+  check(await cmdExpect('setblock 116 -60 116 minecraft:gold_block', /Changed the block/), 'Arena bozuldu (2)');
+
+  const partial1 = waitConsole(/Arena 'test1': \d+\/\d+ bolum yeniden yuklendi/, 30000);
   const won = waitChat(A, /Duelloyu kazandın/);
   const lost = waitChat(C, /Duelloyu kaybettin/);
   cmd('kill BotC');
@@ -286,12 +304,16 @@ async function main() {
   await sleep(6500);
   check(!inArena(A), 'Kazanan arenadan cikarildi');
   check(!inArena(C), 'Kaybeden arenadan cikarildi');
-  let r = await cmdExpect('execute if block 105 -61 105 minecraft:diamond_block', /Test (passed|failed)/);
+  let r = await cmdExpect('execute if block 115 -61 115 minecraft:diamond_block', /Test (passed|failed)/);
   check(r && /passed/.test(r), 'Arena schem ile geri yuklendi (kirilan blok)');
-  r = await cmdExpect('execute if block 106 -60 106 minecraft:air', /Test (passed|failed)/);
+  r = await cmdExpect('execute if block 116 -60 116 minecraft:air', /Test (passed|failed)/);
   check(r && /passed/.test(r), 'Arena schem ile geri yuklendi (konulan blok)');
   r = await cmdExpect('execute if entity @e[type=minecraft:item,x=100,y=-64,z=100,dx=21,dy=20,dz=21]', /Test (passed|failed)/);
   check(r && /failed/.test(r), 'Arenadaki yere dusen esyalar temizlendi');
+  const pl1 = await partial1;
+  check(pl1 && /2\/4 bolum/.test(pl1), 'Sadece degisen bolumler yapistirildi (sandik NBT + bloklar) (' + pl1 + ')');
+  r = await cmdExpect('execute if data block 108 -60 110 Items[{id:"minecraft:diamond"}]', /Test (passed|failed)/);
+  check(r && /passed/.test(r), 'Sandik icerigi geri yuklendi (NBT)');
 
   // --- zaman asimi: B (beklemede) + C
   cmd('tp BotC -1 -60 2');
@@ -348,13 +370,13 @@ async function main() {
   useNpc(C);
   check(await full, 'Arenalar dolu uyarisi');
   await sleep(3000);
-  cmd('setblock 105 -61 105 minecraft:air');
+  cmd('setblock 115 -61 115 minecraft:air');
   const wonB = waitChat(B, /Duelloyu kazandın/);
   cmd('kill BotA');
   check(await wonB, 'Normal duel bitti');
   await sleep(6500);
   check(!inArena(B) && !inArena(A), 'Normal duel sonrasi arenadan cikildi');
-  r = await cmdExpect('execute if block 105 -61 105 minecraft:diamond_block', /Test (passed|failed)/);
+  r = await cmdExpect('execute if block 115 -61 115 minecraft:diamond_block', /Test (passed|failed)/);
   check(r && /passed/.test(r), 'Normal duel sonrasi arena geri yuklendi');
 
   // --- Kitli duel: envanter takasi ve geri yukleme
@@ -396,6 +418,7 @@ async function main() {
   check(A.inventory.count(swordId) === 1 && A.inventory.count(appleId) === 0, 'Kit verildi (A)');
   check(fs.readdirSync(path.join(SERVER_DIR, 'plugins/DuelSira/states')).length === 2, 'Envanter yedegi diske yazildi');
   await sleep(2500);
+  const noChange = waitConsole(/Arena 'test1': degisiklik yok, yapistirma atlandi/, 30000);
   const kwon = waitChat(A, /Duelloyu kazandın/);
   cmd('kill BotB');
   check(await kwon, 'Kitli duel bitti');
@@ -404,6 +427,15 @@ async function main() {
   check(A.inventory.count(appleId) === 2 && A.inventory.count(swordId) === 0, 'Kazananin eski envanteri geri geldi');
   check(fs.readdirSync(path.join(SERVER_DIR, 'plugins/DuelSira/states')).length === 0, 'Envanter yedekleri temizlendi');
   check(!inArena(A) && !inArena(B), 'Kitli duel sonrasi arenadan cikildi');
+  const nc = await noChange;
+  check(nc, 'Blok degismeyen duelde schem yapistirilmadi (' + nc + ')');
+
+  // --- Zorla tam sifirlama komutu
+  const fullMsg = waitChat(A, /tam sıfırlama için sıraya alındı/);
+  const fullLog = waitConsole(/Arena 'test1': tam yapistirma/, 15000);
+  A.chat('/duel arena test1 sifirla');
+  check(await fullMsg, '/duel arena test1 sifirla');
+  check(await fullLog, 'Zorla tam yapistirma yapildi');
 
   // --- NPC korumasi
   cmd('kill @e[type=minecraft:villager]');

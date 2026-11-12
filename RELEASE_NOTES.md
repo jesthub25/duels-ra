@@ -1,3 +1,14 @@
+## DuelSira v1.1.0: Akıllı arena sıfırlama
+
+- **Değişiklik yoksa schem yapıştırılmaz.** Duel sonunda arena snapshot ile schem'e karşı arka planda karşılaştırılır. Hiçbir blok değişmediyse sunucu hiç yorulmaz.
+- **Bölüm bazlı yapıştırma.** Sadece değişen 16×16×16 bölümler geri yüklenir. Değişiklik oranı `full-threshold` değerini geçerse tek seferde tam yapıştırma yapılır.
+- **NBT takibi.** Sandık, tabela, fırın, huni, dağıtıcı ve iksir standı değişiklikleri olaylarla işaretlenir ve geri yüklenir.
+- **Tekrar kontrol.** Sıfırlama sırasında akan sıvı, düşen kum veya patlama olursa arena tekrar kontrol edilir.
+- **Lag koruması.** Kontrol ve yapıştırma işlemleri tick başına sınırlıdır (`max-operations-per-tick`).
+- **Güvenlik.** Her N sıfırlamada bir tam yapıştırma yapılır (`full-reset-every`). Yeni `/duel arena <isim> sifirla` komutu.
+- **Diğer optimizasyonlar.** Konumdan arena bulma artık chunk indeksiyle O(1). Komut izin listesi önbellekte tutuluyor. Schem karşılaştırma tablosu blok başına 2 bayt.
+- Yeni config bölümü: `arena-reset` (smart, full-threshold, full-reset-every, max-operations-per-tick).
+
 ## DuelSira v1.0.1
 
 - Duel sırasına **sadece NPC'ye sağ tıklayarak** girilir; komutla girme yolu yoktur (testle doğrulandı).

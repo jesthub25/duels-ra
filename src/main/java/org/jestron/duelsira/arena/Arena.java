@@ -5,10 +5,13 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.util.BoundingBox;
 import org.jestron.duelsira.storage.Database.StoredLocation;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 
 public final class Arena {
 
@@ -19,8 +22,23 @@ public final class Arena {
         RESERVED,
         /** Duel oynaniyor. */
         IN_USE,
-        /** Schem geri yukleniyor. */
+        /** Kontrol ediliyor / schem geri yukleniyor. */
         RESETTING
+    }
+
+    /**
+     * Schem'in arena koordinatlarina hizalanmis "olmasi gereken" hali.
+     * palette: benzersiz BlockData'lar, indices: her blok icin palet indeksi.
+     * Indeks sirasi: ((y - minY) * sizeZ + (z - minZ)) * sizeX + (x - minX)
+     */
+    static final class Expected {
+        final BlockData[] palette;
+        final char[] indices;
+
+        Expected(BlockData[] palette, char[] indices) {
+            this.palette = palette;
+            this.indices = indices;
+        }
     }
 
     private final String name;
@@ -31,6 +49,19 @@ public final class Arena {
     private StoredLocation spawn1, spawn2;
     private State state = State.FREE;
     private volatile Clipboard clipboard;
+    private volatile Expected expected;
+
+    // ---- akilli sifirlama durumu (ana thread)
+    /** Olaylarla isaretlenen, NBT'si (sandik icerigi, tabela vb.) degismis olabilecek bolumler. */
+    private final Set<Long> nbtDirty = new HashSet<>();
+    /** Sifirlama sirasinda arenada blok degisti mi (akan sivi vb.) -> tekrar kontrol. */
+    boolean changedDuringReset;
+    /** Bir sonraki sifirlama tam yapistirma olsun. */
+    boolean forceFull;
+    /** Son tam yapistirmadan beri kac sifirlama yapildi. */
+    int resetsSinceFull;
+    /** Ayni sifirlamada kacinci kontrol turu. */
+    int resetAttempt;
 
     Arena(String name, String worldName, int minX, int minY, int minZ, int maxX, int maxY, int maxZ, File folder) {
         this.name = name;
@@ -63,6 +94,9 @@ public final class Arena {
     public int getMaxX() { return maxX; }
     public int getMaxY() { return maxY; }
     public int getMaxZ() { return maxZ; }
+    public int getSizeX() { return maxX - minX + 1; }
+    public int getSizeY() { return maxY - minY + 1; }
+    public int getSizeZ() { return maxZ - minZ + 1; }
 
     public File getSchemFile() {
         return schemFile;
@@ -78,6 +112,14 @@ public final class Arena {
 
     void setClipboard(Clipboard clipboard) {
         this.clipboard = clipboard;
+    }
+
+    Expected getExpected() {
+        return expected;
+    }
+
+    void setExpected(Expected expected) {
+        this.expected = expected;
     }
 
     public State getState() {
@@ -130,8 +172,11 @@ public final class Arena {
 
     public boolean contains(Block b) {
         if (b == null || !b.getWorld().getName().equals(worldName)) return false;
-        return b.getX() >= minX && b.getX() <= maxX && b.getY() >= minY && b.getY() <= maxY
-                && b.getZ() >= minZ && b.getZ() <= maxZ;
+        return contains(b.getX(), b.getY(), b.getZ());
+    }
+
+    boolean contains(int x, int y, int z) {
+        return x >= minX && x <= maxX && y >= minY && y <= maxY && z >= minZ && z <= maxZ;
     }
 
     public BoundingBox getBoundingBox() {
@@ -139,6 +184,47 @@ public final class Arena {
     }
 
     public long getVolume() {
-        return (long) (maxX - minX + 1) * (maxY - minY + 1) * (maxZ - minZ + 1);
+        return (long) getSizeX() * getSizeY() * getSizeZ();
     }
+
+    // ------------------------------------------------------------------ bolumler (16x16x16)
+
+    static long sectionKey(int sx, int sy, int sz) {
+        return ((long) (sx & 0x3FFFFF) << 42) | ((long) (sy & 0xFFFFF) << 22) | (sz & 0x3FFFFF);
+    }
+
+    static int keyX(long k) {
+        return (int) (k >> 42) << 10 >> 10;
+    }
+
+    static int keyY(long k) {
+        return (int) ((k >> 22) & 0xFFFFF) << 12 >> 12;
+    }
+
+    static int keyZ(long k) {
+        return (int) (k & 0x3FFFFF) << 10 >> 10;
+    }
+
+    /** Bolum sayisi (arena ile kesisen 16x16x16 bolumler). */
+    int sectionCount() {
+        return ((maxX >> 4) - (minX >> 4) + 1) * ((maxY >> 4) - (minY >> 4) + 1) * ((maxZ >> 4) - (minZ >> 4) + 1);
+    }
+
+    /** Blogun ve komsularinin bolumunu NBT-kirli olarak isaretler. */
+    void markNbtDirty(int x, int y, int z) {
+        for (int[] d : NEIGHBORS) {
+            int nx = x + d[0], ny = y + d[1], nz = z + d[2];
+            if (contains(nx, ny, nz)) nbtDirty.add(sectionKey(nx >> 4, ny >> 4, nz >> 4));
+        }
+    }
+
+    Set<Long> drainNbtDirty() {
+        Set<Long> copy = new HashSet<>(nbtDirty);
+        nbtDirty.clear();
+        return copy;
+    }
+
+    private static final int[][] NEIGHBORS = {
+            {0, 0, 0}, {1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}
+    };
 }

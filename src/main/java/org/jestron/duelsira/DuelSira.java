@@ -16,6 +16,7 @@ import org.jestron.duelsira.gui.GuiManager;
 import org.jestron.duelsira.gui.MenuListener;
 import org.jestron.duelsira.hook.WorldGuardHook;
 import org.jestron.duelsira.kit.KitManager;
+import org.jestron.duelsira.listener.ArenaListener;
 import org.jestron.duelsira.listener.DuelListener;
 import org.jestron.duelsira.listener.QueueListener;
 import org.jestron.duelsira.queue.NpcManager;
@@ -85,10 +86,12 @@ public final class DuelSira extends JavaPlugin {
         pm.registerEvents(new MenuListener(this), this);
         pm.registerEvents(new DuelListener(this), this);
         pm.registerEvents(new QueueListener(this), this);
+        pm.registerEvents(new ArenaListener(this), this);
 
         register("duel", new DuelCommand(this));
         register("duelsira", new DuelSiraCommand(this));
 
+        arenaManager.startTasks();
         duelManager.startTasks();
         queueManager.startTasks();
         npcManager.startTasks();

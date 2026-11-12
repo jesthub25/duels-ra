@@ -67,10 +67,11 @@ public final class DuelCommand implements TabExecutor {
                 if (admin(p) && arg(p, args, 2, "/duel sil <isim>")) plugin.getArenaManager().deleteArena(p, args[1]);
             }
             case "arena" -> {
-                if (!admin(p) || !arg(p, args, 3, "/duel arena <isim> <setspawn1|setspawn2>")) return true;
+                if (!admin(p) || !arg(p, args, 3, "/duel arena <isim> <setspawn1|setspawn2|sifirla>")) return true;
                 if (args[2].equalsIgnoreCase("setspawn1")) plugin.getArenaManager().setSpawn(p, args[1], 1);
                 else if (args[2].equalsIgnoreCase("setspawn2")) plugin.getArenaManager().setSpawn(p, args[1], 2);
-                else Msg.send(p, "usage", "usage", "/duel arena <isim> <setspawn1|setspawn2>");
+                else if (args[2].equalsIgnoreCase("sifirla") || args[2].equalsIgnoreCase("sıfırla")) plugin.getArenaManager().forceReset(p, args[1]);
+                else Msg.send(p, "usage", "usage", "/duel arena <isim> <setspawn1|setspawn2|sifirla>");
             }
             case "arenalar" -> {
                 if (!admin(p)) return true;
@@ -151,7 +152,7 @@ public final class DuelCommand implements TabExecutor {
         } else if (args.length == 3 && admin) {
             String s = args[0].toLowerCase(Locale.ROOT);
             if (s.equals("arena")) {
-                StringUtil.copyPartialMatches(args[2], Arrays.asList("setspawn1", "setspawn2"), out);
+                StringUtil.copyPartialMatches(args[2], Arrays.asList("setspawn1", "setspawn2", "sifirla"), out);
             } else if (s.equals("kit") && args[1].equalsIgnoreCase("sil")) {
                 StringUtil.copyPartialMatches(args[2], plugin.getKitManager().getKitNames(), out);
             }

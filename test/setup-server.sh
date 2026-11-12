@@ -55,6 +55,7 @@ settings:
   end-delay: 2
   countdown: 3
   hub-command: ""
+  debug: true
 queue:
   response-time: 5
   click-cooldown-ms: 300
