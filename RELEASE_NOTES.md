@@ -1,3 +1,13 @@
+## DuelSira v1.2.0
+
+- **Kuvvet I seçeneği:** `/duel <oyuncu>` menüsünde Kuvvet I aç/kapat düğmesi var. Açıksa duel boyunca iki oyuncuya da Kuvvet I verilir; süt, totem veya `/effect clear` silerse otomatik geri gelir. Duel bitince kaldırılır.
+- **Duel sırası:** Tüm sıra duelloları varsayılan olarak Kuvvet I ile atılır. Bunu sadece admin `/duelsira kuvvet <aç|kapat>` ile değiştirebilir (`queue.strength`).
+- **Kaldırıldı:** Duel menüsündeki "eşyalar düşer/korunur" düğmesi. Kendi envanteriyle duelda bu artık `settings.items-drop` ayarından gelir; kitli duelde eşyalar her zaman korunur.
+- **Kaldırıldı:** Duel kuralları sistemi (merdiven, slab, buton, ağ, elytra), kurallar menüsü ve `defaults` config bölümü.
+- **Kaldırıldı:** Sıra eşleşmesindeki [ENVANTERİ GÖR] butonu ve `/duelsira envanter` komutu. Sohbette artık sadece [EVET] [HAYIR] var.
+- Duel geçmişinde Kuvvet I bilgisi gösteriliyor.
+- Yeni config ayarları: `settings.items-drop`, `settings.strength-default`, `queue.strength`.
+
 ## DuelSira v1.1.0: Akıllı arena sıfırlama
 
 - **Değişiklik yoksa schem yapıştırılmaz.** Duel sonunda arena snapshot ile schem'e karşı arka planda karşılaştırılır. Hiçbir blok değişmediyse sunucu hiç yorulmaz.

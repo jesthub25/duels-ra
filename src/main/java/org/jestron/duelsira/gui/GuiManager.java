@@ -9,7 +9,6 @@ import org.bukkit.inventory.ItemStack;
 import org.jestron.duelsira.DuelSira;
 import org.jestron.duelsira.arena.Arena;
 import org.jestron.duelsira.duel.DuelManager;
-import org.jestron.duelsira.duel.DuelSettings;
 import org.jestron.duelsira.storage.Database;
 import org.jestron.duelsira.util.InventorySerializer;
 import org.jestron.duelsira.util.ItemBuilder;
@@ -38,12 +37,11 @@ public final class GuiManager {
         final UUID target;
         String kit;
         String arena;
-        boolean itemsDrop = true;
-        final DuelSettings settings;
+        boolean strength;
 
-        Session(UUID target, DuelSettings settings) {
+        Session(UUID target, boolean strength) {
             this.target = target;
-            this.settings = settings;
+            this.strength = strength;
         }
     }
 
@@ -61,7 +59,7 @@ public final class GuiManager {
     public void openSend(Player challenger, Player target) {
         Session s = sessions.get(challenger.getUniqueId());
         if (s == null || !s.target.equals(target.getUniqueId())) {
-            s = new Session(target.getUniqueId(), new DuelSettings(plugin.getConfig()));
+            s = new Session(target.getUniqueId(), plugin.getConfig().getBoolean("settings.strength-default", false));
             sessions.put(challenger.getUniqueId(), s);
         }
         new SendMenu(s, target.getName()).open(challenger);
@@ -117,7 +115,12 @@ public final class GuiManager {
                 Msg.send(p, "duel-send-cancelled");
             });
 
-            set(4, new ItemBuilder(Material.BOOK)
+            Player target = Bukkit.getPlayer(s.target);
+            boolean drop = plugin.getDuelManager().normalItemsDrop(s.kit);
+            set(4, new ItemBuilder(Material.PLAYER_HEAD).name(Msg.raw("gui-target", "player", targetName)).skull(target)
+                    .lore(Msg.raw("gui-mode-line", "mode", drop ? Msg.raw("mode-drop") : Msg.raw("mode-keep"))).build());
+
+            set(11, new ItemBuilder(Material.BOOK)
                     .name(s.arena == null ? Msg.raw("gui-arena-random") : Msg.raw("gui-arena-selected", "arena", s.arena))
                     .lore(Msg.raw("gui-click-change")).build(), p -> new ArenaMenu(s).open(p));
 
@@ -125,35 +128,12 @@ public final class GuiManager {
                     .name(s.kit == null ? Msg.raw("gui-kit-own") : Msg.raw("gui-kit-selected", "kit", s.kit))
                     .lore(Msg.raw("gui-click-change")).build(), p -> new KitMenu(s).open(p));
 
-            if (s.kit != null) {
-                set(22, new ItemBuilder(Material.GRAY_CONCRETE).name(Msg.raw("gui-drop-kit")).build());
-            } else if (s.itemsDrop) {
-                set(22, new ItemBuilder(Material.LIME_CONCRETE).name(Msg.raw("gui-drop-on"))
-                        .lore(Msg.raw("gui-drop-on-lore")).build(), p -> {
-                    s.itemsDrop = false;
-                    reopen(p, s);
-                });
-            } else {
-                set(22, new ItemBuilder(Material.RED_CONCRETE).name(Msg.raw("gui-drop-off"))
-                        .lore(Msg.raw("gui-drop-off-lore")).build(), p -> {
-                    s.itemsDrop = true;
-                    reopen(p, s);
-                });
-            }
-
-            if (s.kit == null) {
-                DuelSettings r = s.settings;
-                List<String> lore = new ArrayList<>();
-                lore.add(Msg.raw("gui-rules-lore"));
-                lore.add("");
-                lore.add(Msg.raw("rule-line", "rule", Msg.raw("rule-ladder"), "state", DuelManager.onOff(r.isAllowLadder())));
-                lore.add(Msg.raw("rule-line", "rule", Msg.raw("rule-slab"), "state", DuelManager.onOff(r.isAllowSlab())));
-                lore.add(Msg.raw("rule-line", "rule", Msg.raw("rule-button"), "state", DuelManager.onOff(r.isAllowButton())));
-                lore.add(Msg.raw("rule-line", "rule", Msg.raw("rule-cobweb"), "state", DuelManager.onOff(r.isAllowCobweb())));
-                lore.add(Msg.raw("rule-line", "rule", Msg.raw("rule-elytra"), "state", DuelManager.onOff(r.isAllowElytra())));
-                set(12, new ItemBuilder(Material.COMPARATOR).name(Msg.raw("gui-rules")).lore(lore).build(),
-                        p -> new RulesMenu(s).open(p));
-            }
+            set(15, new ItemBuilder(s.strength ? Material.BLAZE_POWDER : Material.GRAY_DYE)
+                    .name(s.strength ? Msg.raw("gui-strength-on") : Msg.raw("gui-strength-off"))
+                    .lore(Msg.raw("gui-strength-lore"), "", Msg.raw("gui-click-toggle")).build(), p -> {
+                s.strength = !s.strength;
+                reopen(p, s);
+            });
         }
 
         private void send(Player p) {
@@ -165,7 +145,7 @@ public final class GuiManager {
                 Msg.send(p, "player-not-found");
                 return;
             }
-            plugin.getDuelManager().sendRequest(p, t, s.kit, s.arena, s.itemsDrop, s.kit == null ? s.settings : null);
+            plugin.getDuelManager().sendRequest(p, t, s.kit, s.arena, s.strength);
         }
     }
 
@@ -221,28 +201,6 @@ public final class GuiManager {
         }
     }
 
-    private final class RulesMenu extends SetupMenu {
-        RulesMenu(Session s) {
-            super(3, Msg.raw("gui-rules-title"));
-            DuelSettings r = s.settings;
-            ItemStack info = new ItemBuilder(Material.YELLOW_STAINED_GLASS_PANE).name(Msg.raw("gui-rules"))
-                    .lore(Msg.raw("gui-rules-info")).build();
-            for (int i = 0; i < 9; i++) set(i, info);
-            set(10, toggle(Material.LADDER, "rule-ladder", r.isAllowLadder()), p -> { r.toggleLadder(); new RulesMenu(s).open(p); });
-            set(11, toggle(Material.STONE_SLAB, "rule-slab", r.isAllowSlab()), p -> { r.toggleSlab(); new RulesMenu(s).open(p); });
-            set(12, toggle(Material.STONE_BUTTON, "rule-button", r.isAllowButton()), p -> { r.toggleButton(); new RulesMenu(s).open(p); });
-            set(13, toggle(Material.COBWEB, "rule-cobweb", r.isAllowCobweb()), p -> { r.toggleCobweb(); new RulesMenu(s).open(p); });
-            set(14, toggle(Material.ELYTRA, "rule-elytra", r.isAllowElytra()), p -> { r.toggleElytra(); new RulesMenu(s).open(p); });
-            set(22, new ItemBuilder(Material.ARROW).name(Msg.raw("gui-back")).build(), p -> reopen(p, s));
-        }
-
-        private ItemStack toggle(Material m, String ruleKey, boolean on) {
-            return new ItemBuilder(on ? m : Material.BARRIER)
-                    .name((on ? "&a&l" : "&c&l") + Msg.raw(ruleKey))
-                    .lore(on ? Msg.raw("gui-rule-on") : Msg.raw("gui-rule-off")).build();
-        }
-    }
-
     private static int rowsFor(int items) {
         return Math.max(3, Math.min(6, (items + 8) / 9));
     }
@@ -290,6 +248,7 @@ public final class GuiManager {
                 lore.add(Msg.raw("history-arena", "arena", r.arena));
                 lore.add(Msg.raw("history-kit", "kit", r.kit == null ? Msg.raw("own-inventory") : r.kit));
                 lore.add(Msg.raw("history-mode", "mode", r.itemsDrop ? Msg.raw("mode-drop") : Msg.raw("mode-keep")));
+                lore.add(Msg.raw("history-strength", "state", DuelManager.onOff(r.settingsJson != null && r.settingsJson.contains("\"strength\":true"))));
                 lore.add(Msg.raw("history-duration", "seconds", r.duration));
                 lore.add("");
                 lore.add(Msg.raw("gui-click-detail"));

@@ -9,9 +9,9 @@ Paper/Spigot **1.20.1+** · Java 17 · Gereken pluginler: **WorldEdit** (veya FA
 - `/duelsira ekle <mob>` (alias `/duelsıra`): tab'da Minecraft'taki tüm moblar listelenir. Mob, durduğun bloğun **tam ortasına** konur ve **baktığın yöne** döner. AI'si kapalıdır, sağa sola dönmez, hasar almaz, yanmaz, dönüşmez. Ticaret, binme ve kayış kullanılamaz. Biri silerse otomatik geri gelir.
 - Sıraya **sadece NPC'ye sağ tıklayarak** girilir (komutla girilemez). Tekrar sağ tık atarsan sıradan çıkarsın.
 - Sırada kalmak için WorldGuard **pvp=deny** olan bir bölgede olmalısın. PvP açık bölgeye girersen sıradan atılırsın.
-- Eşleşince oyuncular hemen ışınlanmaz. Sohbette şu soru çıkar: *"X oyuncusuyla eşleştin! Kabul ediyor musun?"* **[EVET] [HAYIR] [ENVANTERİ GÖR]**
-  - **ENVANTERİ GÖR:** rakibin envanteri salt okunur bir menüde açılır. Menüden hiçbir eşya alınamaz.
-  - İki taraf da **EVET** derse rastgele boş bir arenada **kuralsız** duel başlar.
+- Eşleşince oyuncular hemen ışınlanmaz. Sohbette şu soru çıkar: *"X oyuncusuyla eşleştin! Kabul ediyor musun?"* **[EVET] [HAYIR]**
+  - İki taraf da **EVET** derse rastgele boş bir arenada duel başlar.
+  - Sıradaki tüm duellolar **Kuvvet I** ile atılır. Bunu sadece admin `/duelsira kuvvet <aç|kapat>` ile değiştirebilir.
   - **HAYIR** diyen sıradan çıkar. Karşı taraf sıranın başına geri alınır ve yeni rakip bekler.
   - Reddeden oyuncu, reddettiği kişiyle **en az bir kez başka biriyle eşleşmeden** tekrar eşleşmez.
   - **15 saniye** içinde yanıt vermeyen taraf veya taraflar sıradan çıkarılır. Yanıt veren taraf sırada kalır.
@@ -31,7 +31,8 @@ Paper/Spigot **1.20.1+** · Java 17 · Gereken pluginler: **WorldEdit** (veya FA
 - Sunucu duel ortasında çökerse, açılışta "kirli" kalan arenalar otomatik sıfırlanır.
 
 ### Normal duel
-- `/duel <oyuncu>` komutu GUI açar. GUI'de kit, arena, "eşyalar düşer/korunur" ve kurallar (merdiven, slab, buton, ağ, elytra) seçilir.
+- `/duel <oyuncu>` komutu GUI açar. GUI'de arena, kit ve **Kuvvet I** (aç/kapat) seçilir. Kuvvet I açıksa duel boyunca iki oyuncuya da verilir; süt veya totem silerse geri gelir.
+- Kendi envanteriyle oynanan duellolarda eşyaların düşüp düşmeyeceğini `config.yml` içindeki `settings.items-drop` ayarı belirler. Kitli duellolarda eşyalar her zaman korunur.
 - Duel geçmişi `/duel gui` ile açılır. Kayıtlarda tarih, kazanan, arena ve süre bulunur. Oyuncuların duel sonundaki envanteri de salt okunur olarak görülebilir.
 
 ## Komutlar
@@ -53,12 +54,13 @@ Paper/Spigot **1.20.1+** · Java 17 · Gereken pluginler: **WorldEdit** (veya FA
 | `/duelsira ekle <mob>` | Sıra NPC'si koy | duelsira.admin |
 | `/duelsira kaldır [npc]` | NPC kaldır (tab: eklenen tüm NPC'ler; boşsa en yakın) | duelsira.admin |
 | `/duelsira liste` | NPC listesi | duelsira.admin |
-| `/duelsira evet` / `hayır` / `envanter` / `ayrıl` | Eşleşmeyi yanıtla / sıradan çık | duelsira.use |
+| `/duelsira evet` / `hayır` / `ayrıl` | Eşleşmeyi yanıtla / sıradan çık | duelsira.use |
+| `/duelsira kuvvet <aç\|kapat>` | Sıra duellolarında Kuvvet I | duelsira.admin |
 
 `duel.admin.bypass`: duel sırasında komut engelini atlar.
 
 ## Kurulum
-1. `DuelSira-1.1.0.jar` dosyasını `plugins/` klasörüne at. WorldEdit ve WorldGuard da kurulu olmalı.
+1. `DuelSira-1.2.0.jar` dosyasını `plugins/` klasörüne at. WorldEdit ve WorldGuard da kurulu olmalı.
 2. Sunucuyu başlat.
 3. `//wand` ile arena alanını seç, `/duel olustur arena1` yaz, sonra `setspawn1` ve `setspawn2` ile spawnları ayarla.
 4. Lobide WorldGuard ile `pvp deny` olan bir bölge belirle. Örnek: `/rg flag spawn pvp deny`
@@ -75,12 +77,12 @@ Gerekenler: **JDK 17** ve **Maven 3.8+**.
 1. JDK 17 kur ([Adoptium Temurin 17](https://adoptium.net/temurin/releases/?version=17)). Kurulumda "Set JAVA_HOME" seçeneğini işaretle.
 2. Maven kur ([maven.apache.org/download.cgi](https://maven.apache.org/download.cgi)). Zip'i aç ve `bin` klasörünü PATH'e ekle.
 3. Kontrol et: `java -version` (17 görünmeli), `mvn -v`.
-4. `DuelSira-v1.1.0-source.zip` dosyasını aç ve klasöre gir (içinde `pom.xml` olan klasör).
+4. `DuelSira-v1.2.0-source.zip` dosyasını aç ve klasöre gir (içinde `pom.xml` olan klasör).
 5. Derle:
    ```
    mvn clean package
    ```
-6. Jar dosyası şuraya çıkar: `target/DuelSira-1.1.0.jar`
+6. Jar dosyası şuraya çıkar: `target/DuelSira-1.2.0.jar`
 
 IntelliJ IDEA ile: *File → Open → pom.xml → Open as Project*. Sağdaki Maven panelinde *Lifecycle → package* adımına çift tıkla.
 

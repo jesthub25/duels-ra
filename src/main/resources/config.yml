@@ -13,6 +13,11 @@ settings:
   loot-time: 15
   # Oyuncularin arenadan cikip cikmadigi kac tick'te bir kontrol edilsin (20 tick = 1 sn)
   border-check-interval: 10
+  # Normal (/duel) duellolarda kendi envanteriyle oynaninca esyalar yere dussun mu.
+  # Kitli duellolarda esyalar her zaman korunur.
+  items-drop: true
+  # /duel menusundeki "Kuvvet I" secenegi ilk acildiginda acik mi gelsin
+  strength-default: false
   # Ayni anda en fazla kac duel (0 = sinirsiz)
   max-concurrent-duels: 50
   # Duel bitince calistirilacak komut (oyuncu adina). Bos birakilirsa sadece lobby'e isinlanir.
@@ -44,20 +49,15 @@ arena-reset:
   # Ayni tick'te en fazla kac kontrol/yapistirma islemi (ayni anda biten duellolar lag yapmasin)
   max-operations-per-tick: 1
 
-# Normal duellolarda (kendi envanteri) kural varsayilanlari
-defaults:
-  allow-ladder: true
-  allow-slab: true
-  allow-button: true
-  allow-cobweb: true
-  allow-elytra: true
-
 # Duel sirasi (NPC'ye sag tik)
 queue:
   # Eslesince EVET/HAYIR icin sure (saniye). Yanit vermeyen siradan cikarilir.
   response-time: 15
-  # Sira duellolarinda (kendi envanteri, kuralsiz) esyalar yere dussun mu
+  # Sira duellolarinda (kendi envanteri) esyalar yere dussun mu
   items-drop: true
+  # Sira duellolarinin hepsinde Kuvvet I verilsin mi (oyuncular degistiremez;
+  # admin: /duelsira kuvvet <aç|kapat>)
+  strength: true
   # NPC'ye ust uste tiklama korumasi (milisaniye)
   click-cooldown-ms: 1000
 
@@ -93,8 +93,7 @@ messages:
   target-has-request: "&e{player} &coyuncusunun zaten bekleyen bir isteği var."
   request-sent: "&e{player} &aadlı oyuncuya duel isteği gönderildi."
   request-received: "&e&l{player} &asana duel teklifi gönderdi!"
-  request-info: "&7Kit: &f{kit} &8| &7Mod: {mode} &8| &7Arena: &f{arena}"
-  request-rules: "&7Kurallar: Merdiven {ladder}&7, Slab {slab}&7, Buton {button}&7, Ağ {cobweb}&7, Elytra {elytra}"
+  request-info: "&7Kit: &f{kit} &8| &7Mod: {mode} &8| &7Arena: &f{arena} &8| &7Kuvvet I: {strength}"
   request-timeout-info: "&7Bu istek &e{seconds} &7saniye içinde zaman aşımına uğrayacak."
   request-expired-sender: "&cDuel isteğin zaman aşımına uğradı."
   request-expired-target: "&cGelen duel isteği zaman aşımına uğradı."
@@ -135,13 +134,6 @@ messages:
   border-warning: "&c&lUYARI: &cDuel alanından çıkamazsın!"
   command-blocked: "&cDuel sırasında komut kullanamazsın."
   pearl-blocked: "&cDuel sırasında ender pearl kullanamazsın!"
-  rule-blocked: "&cBu duelloda yasak: &e{rule}"
-  rule-ladder: "Merdiven"
-  rule-slab: "Basamak (Slab)"
-  rule-button: "Buton"
-  rule-cobweb: "Örümcek Ağı"
-  rule-elytra: "Elytra"
-  rule-line: "&7{rule}: {state}"
 
   # ---- Duel sirasi
   queue-joined: "&aDuel sırasına girdin! &7(Sırada {size} kişi) &8- &7Çıkmak için NPC'ye tekrar tıkla."
@@ -160,8 +152,6 @@ messages:
   button-yes-hover: "&aEşleşmeyi kabul et"
   button-no: "&c&l[HAYIR]"
   button-no-hover: "&cEşleşmeyi reddet (sıradan çıkarsın)"
-  button-inventory: "&b&l[ENVANTERİ GÖR]"
-  button-inventory-hover: "&b{player} &7oyuncusunun envanterine bak"
   queue-no-match: "&cAktif bir duel sırası eşleşmen yok."
   queue-already-accepted: "&eZaten kabul ettin, rakibin bekleniyor."
   queue-you-accepted: "&aKabul ettin! &7Rakibin bekleniyor..."
@@ -173,6 +163,8 @@ messages:
   queue-timeout-removed: "&cSüresinde yanıt vermediğin için duel sırasından çıkarıldın."
   queue-requeued: "&aTekrar duel sırasının başına alındın, yeni rakip bekleniyor..."
   queue-start-failed: "&cDuel başlatılamadı, tekrar sıraya alındın."
+  queue-strength-status: "&7Duel sırası Kuvvet I: {state}"
+  queue-strength-set: "&aDuel sırası Kuvvet I ayarlandı: {state}"
   queue-actionbar: "&aDuel sırasındasın &8| &7Sıra: &e{position}&7/&e{size} &8| &7Rakip aranıyor..."
   queue-actionbar-full: "&cTüm arenalar dolu! &7Boş arena bekleniyor... &8(&7Sırada {size} kişi&8)"
 
@@ -219,6 +211,12 @@ messages:
   gui-send-lore: "&7Seçili ayarlarla duel teklifi gönder."
   gui-cancel: "&c&lİPTAL"
   gui-cancel-lore: "&7Duel göndermeyi iptal et."
+  gui-target: "&e&l{player}"
+  gui-mode-line: "&7Mod: {mode}"
+  gui-strength-on: "&6&lKuvvet I &a(Açık)"
+  gui-strength-off: "&7&lKuvvet I &c(Kapalı)"
+  gui-strength-lore: "&7Duel boyunca iki oyuncuya da Kuvvet I verilir."
+  gui-click-toggle: "&eAçmak/kapatmak için tıkla."
   gui-arena-random: "&dArena: &fRastgele"
   gui-arena-selected: "&dArena: &b{arena}"
   gui-click-change: "&7Değiştirmek için tıkla."
@@ -226,17 +224,6 @@ messages:
   gui-click-detail: "&eDetay için tıkla!"
   gui-kit-own: "&eKit: &fKendi Envanterin"
   gui-kit-selected: "&eKit: &a{kit}"
-  gui-drop-kit: "&7Kitli duelde eşyalar korunur"
-  gui-drop-on: "&c&lEşyalar Düşer &7(Aktif)"
-  gui-drop-on-lore: "&7Kapatmak için tıkla."
-  gui-drop-off: "&a&lEşyalar Korunur &7(Aktif)"
-  gui-drop-off-lore: "&7Açmak için tıkla."
-  gui-rules: "&6&lDuel Kuralları"
-  gui-rules-lore: "&7Sadece kendi envanterinle geçerli."
-  gui-rules-info: "&7Tıklayarak aç/kapat."
-  gui-rules-title: "&8Duel Kuralları"
-  gui-rule-on: "&a&lAÇIK &7- kapatmak için tıkla"
-  gui-rule-off: "&c&lKAPALI &7- açmak için tıkla"
   gui-kit-title: "&8Kit Seçimi"
   gui-kit-own-option: "&cKendi Envanterini Kullan"
   gui-kit-option: "&bKit: &f{kit}"
@@ -272,6 +259,7 @@ messages:
   history-kit: "&7Kit: &f{kit}"
   history-mode: "&7Mod: {mode}"
   history-duration: "&7Süre: &f{seconds} sn"
+  history-strength: "&7Kuvvet I: {state}"
   history-not-found: "&cKayıt bulunamadı."
   history-inventory-error: "&cKayıtlı envanter okunamadı."
 
@@ -296,9 +284,9 @@ messages:
     - "&7Duel sırasına girmek için PvP kapalı bölgede NPC'ye sağ tıkla."
     - "&b/duelsira evet &7- Eşleşmeyi kabul et"
     - "&b/duelsira hayır &7- Eşleşmeyi reddet"
-    - "&b/duelsira envanter &7- Rakibin envanterine bak"
     - "&b/duelsira ayrıl &7- Sıradan çık"
   help-queue-admin:
     - "&c/duelsira ekle <mob> &7- Bulunduğun bloğun ortasına NPC koy"
     - "&c/duelsira kaldır [npc] &7- NPC kaldır (tab: eklenen tüm NPC'ler, boş: en yakın)"
     - "&c/duelsira liste &7- NPC listesi"
+    - "&c/duelsira kuvvet <aç|kapat> &7- Sıra duellolarında Kuvvet I"

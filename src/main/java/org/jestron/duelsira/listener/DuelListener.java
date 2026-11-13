@@ -2,7 +2,6 @@ package org.jestron.duelsira.listener;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.entity.EnderPearl;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -14,7 +13,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityToggleGlideEvent;
+import org.bukkit.event.entity.EntityPotionEffectEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileLaunchEvent;
 import org.bukkit.event.player.PlayerBucketEmptyEvent;
@@ -106,18 +105,6 @@ public final class DuelListener implements Listener {
         if (d == null) return;
         if (d.getPhase() != DuelInstance.Phase.FIGHT || !d.getArena().contains(e.getBlockPlaced())) {
             e.setCancelled(true);
-            return;
-        }
-        Material m = e.getBlockPlaced().getType();
-        String n = m.name();
-        String rule = null;
-        if (!d.allowLadder() && m == Material.LADDER) rule = "rule-ladder";
-        else if (!d.allowSlab() && n.endsWith("_SLAB")) rule = "rule-slab";
-        else if (!d.allowButton() && n.endsWith("_BUTTON")) rule = "rule-button";
-        else if (!d.allowCobweb() && m == Material.COBWEB) rule = "rule-cobweb";
-        if (rule != null) {
-            e.setCancelled(true);
-            Msg.send(p, "rule-blocked", "rule", Msg.raw(rule));
         }
     }
 
@@ -141,15 +128,14 @@ public final class DuelListener implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
-    public void onGlide(EntityToggleGlideEvent e) {
-        if (!e.isGliding() || !duels.hasActiveDuels()) return;
-        if (!(e.getEntity() instanceof Player p)) return;
-        DuelInstance d = duels.getDuel(p.getUniqueId());
-        if (d != null && !d.allowElytra()) {
-            e.setCancelled(true);
-            Msg.send(p, "rule-blocked", "rule", Msg.raw("rule-elytra"));
-        }
+    /** Kuvvet I'li duelde sut/totem vb. efekti silerse geri verilir. */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onEffect(EntityPotionEffectEvent e) {
+        if (!duels.hasActiveDuels() || !(e.getEntity() instanceof Player p)) return;
+        if (e.getAction() != EntityPotionEffectEvent.Action.REMOVED && e.getAction() != EntityPotionEffectEvent.Action.CLEARED) return;
+        if (e.getCause() == EntityPotionEffectEvent.Cause.PLUGIN || e.getCause() == EntityPotionEffectEvent.Cause.DEATH) return;
+        if (!e.getModifiedType().equals(DuelManager.strengthType())) return;
+        duels.handleEffectRemoved(p);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)

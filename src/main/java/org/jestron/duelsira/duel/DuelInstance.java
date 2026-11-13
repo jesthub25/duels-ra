@@ -20,21 +20,21 @@ public final class DuelInstance {
     private final Arena arena;
     private final String kitName;
     private final boolean itemsDrop;
-    private final DuelSettings settings; // null = kural yok
+    private final boolean strength;
     private final Map<UUID, String> snapshots = new HashMap<>(4);
     private Phase phase = Phase.COUNTDOWN;
     private long fightStart;
     private BukkitTask countdownTask;
     private BukkitTask endTask;
 
-    DuelInstance(Type type, UUID p1, UUID p2, Arena arena, String kitName, boolean itemsDrop, DuelSettings settings) {
+    DuelInstance(Type type, UUID p1, UUID p2, Arena arena, String kitName, boolean itemsDrop, boolean strength) {
         this.type = type;
         this.p1 = p1;
         this.p2 = p2;
         this.arena = arena;
         this.kitName = kitName;
         this.itemsDrop = kitName == null && itemsDrop;
-        this.settings = settings;
+        this.strength = strength;
     }
 
     public Type getType() { return type; }
@@ -45,7 +45,8 @@ public final class DuelInstance {
     public boolean isKit() { return kitName != null; }
     /** Kendi envanteri + esyalar duser modu. */
     public boolean isItemsDrop() { return itemsDrop; }
-    public DuelSettings getSettings() { return settings; }
+    /** Duel boyunca Kuvvet I. */
+    public boolean isStrength() { return strength; }
     public Phase getPhase() { return phase; }
     void setPhase(Phase phase) { this.phase = phase; }
     long getFightStart() { return fightStart; }
@@ -78,10 +79,4 @@ public final class DuelInstance {
         return Bukkit.getPlayer(getOpponent(u));
     }
 
-    /** Kural kontrolu: settings yoksa her sey serbest. */
-    public boolean allowLadder() { return settings == null || settings.isAllowLadder(); }
-    public boolean allowSlab() { return settings == null || settings.isAllowSlab(); }
-    public boolean allowButton() { return settings == null || settings.isAllowButton(); }
-    public boolean allowCobweb() { return settings == null || settings.isAllowCobweb(); }
-    public boolean allowElytra() { return settings == null || settings.isAllowElytra(); }
 }

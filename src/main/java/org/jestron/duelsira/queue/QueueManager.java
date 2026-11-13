@@ -3,13 +3,11 @@ package org.jestron.duelsira.queue;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.scheduler.BukkitTask;
 import org.jestron.duelsira.DuelSira;
 import org.jestron.duelsira.arena.Arena;
 import org.jestron.duelsira.duel.DuelInstance;
 import org.jestron.duelsira.duel.DuelManager;
-import org.jestron.duelsira.gui.InventoryViewMenu;
 import org.jestron.duelsira.hook.WorldGuardHook;
 import org.jestron.duelsira.util.Msg;
 
@@ -25,8 +23,8 @@ import java.util.UUID;
 /**
  * Duel sirasi.
  * - Siraya girmek/kalmak icin WorldGuard pvp=deny bolgede olmak gerekir.
- * - Eslesen iki oyuncuya sohbette [EVET] [HAYIR] [ENVANTERI GOR] sorulur.
- * - Ikisi de kabul ederse rastgele bos arenada kuralsiz duel baslar.
+ * - Eslesen iki oyuncuya sohbette [EVET] [HAYIR] sorulur.
+ * - Ikisi de kabul ederse rastgele bos arenada duel baslar (varsayilan Kuvvet I, sadece admin degistirir).
  * - Reddeden siradan cikar; karsi taraf siranin basina geri alinir.
  * - Reddeden, reddettigi oyuncuyla en az bir kez baska biriyle eslesmeden tekrar eslesmez.
  * - Sure icinde yanit vermeyen taraf(lar) siradan cikarilir.
@@ -300,9 +298,7 @@ public final class QueueManager {
         Msg.send(to, "queue-matched", "player", opponent.getName());
         to.spigot().sendMessage(DuelManager.buttons(
                 DuelManager.button(Msg.raw("button-yes"), "/duelsira evet", Msg.raw("button-yes-hover")),
-                DuelManager.button(Msg.raw("button-no"), "/duelsira hayir", Msg.raw("button-no-hover")),
-                DuelManager.button(Msg.raw("button-inventory"), "/duelsira envanter",
-                        Msg.raw("button-inventory-hover", "player", opponent.getName()))));
+                DuelManager.button(Msg.raw("button-no"), "/duelsira hayir", Msg.raw("button-no-hover"))));
         Msg.send(to, "queue-respond-time", "seconds", seconds);
         to.playSound(to.getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f);
     }
@@ -375,7 +371,8 @@ public final class QueueManager {
         boolean started = false;
         if (pa != null && pb != null && m.arena.getState() == Arena.State.RESERVED) {
             started = plugin.getDuelManager().startDuel(pa, pb, m.arena, null,
-                    plugin.getConfig().getBoolean("queue.items-drop", true), null, DuelInstance.Type.QUEUE);
+                    plugin.getConfig().getBoolean("queue.items-drop", true),
+                    plugin.getConfig().getBoolean("queue.strength", true), DuelInstance.Type.QUEUE);
         }
         if (!started) {
             if (m.arena.getState() == Arena.State.RESERVED) {
@@ -398,15 +395,6 @@ public final class QueueManager {
         }
         matches.remove(m.a, m);
         matches.remove(m.b, m);
-        // Acik envanter goruntuleme menulerini kapat
-        for (UUID u : new UUID[]{m.a, m.b}) {
-            Player p = Bukkit.getPlayer(u);
-            if (p == null) continue;
-            InventoryHolder h = p.getOpenInventory().getTopInventory().getHolder();
-            if (h instanceof InventoryViewMenu v && v.isLiveView()) {
-                p.closeInventory();
-            }
-        }
     }
 
     private void requeueFront(Player p) {
@@ -419,22 +407,6 @@ public final class QueueManager {
         queue.addFirst(u);
         queued.add(u);
         Msg.send(p, "queue-requeued");
-    }
-
-    // ================================================================== Envanter goruntuleme
-
-    public void openOpponentInventory(Player p) {
-        Match m = matches.get(p.getUniqueId());
-        if (m == null || m.closed) {
-            Msg.send(p, "queue-no-match");
-            return;
-        }
-        Player other = Bukkit.getPlayer(m.other(p.getUniqueId()));
-        if (other == null) {
-            Msg.send(p, "player-not-found");
-            return;
-        }
-        InventoryViewMenu.openLive(p, other);
     }
 
     // ================================================================== Periyodik

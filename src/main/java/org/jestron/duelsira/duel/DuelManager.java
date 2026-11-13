@@ -7,6 +7,7 @@ import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.hover.content.Text;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
@@ -15,6 +16,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 import org.jestron.duelsira.DuelSira;
@@ -105,17 +107,15 @@ public final class DuelManager {
     private static final class DuelRequest {
         final UUID challenger, target;
         final String kit, arena;
-        final boolean itemsDrop;
-        final DuelSettings settings;
+        final boolean strength;
         BukkitTask timeout;
 
-        DuelRequest(UUID challenger, UUID target, String kit, String arena, boolean itemsDrop, DuelSettings settings) {
+        DuelRequest(UUID challenger, UUID target, String kit, String arena, boolean strength) {
             this.challenger = challenger;
             this.target = target;
             this.kit = kit;
             this.arena = arena;
-            this.itemsDrop = itemsDrop;
-            this.settings = settings;
+            this.strength = strength;
         }
     }
 
@@ -148,7 +148,12 @@ public final class DuelManager {
         return true;
     }
 
-    public void sendRequest(Player challenger, Player target, String kit, String arena, boolean itemsDrop, DuelSettings settings) {
+    /** Normal (manuel) duellolarda kendi envanteriyle esyalar duser mu (config). Kitli duelde her zaman korunur. */
+    public boolean normalItemsDrop(String kit) {
+        return kit == null && plugin.getConfig().getBoolean("settings.items-drop", true);
+    }
+
+    public void sendRequest(Player challenger, Player target, String kit, String arena, boolean strength) {
         if (!canChallenge(challenger, target)) return;
         DuelRequest existing = requestsByTarget.get(target.getUniqueId());
         if (existing != null && !existing.challenger.equals(challenger.getUniqueId())) {
@@ -162,8 +167,7 @@ public final class DuelManager {
         // Onceki gonderdigi istek varsa iptal
         cancelRequestOf(challenger.getUniqueId(), false);
 
-        DuelRequest req = new DuelRequest(challenger.getUniqueId(), target.getUniqueId(), kit, arena,
-                kit == null && itemsDrop, kit == null ? settings : null);
+        DuelRequest req = new DuelRequest(challenger.getUniqueId(), target.getUniqueId(), kit, arena, strength);
         requestsByTarget.put(target.getUniqueId(), req);
         requestsByChallenger.put(challenger.getUniqueId(), req);
 
@@ -179,16 +183,11 @@ public final class DuelManager {
         Msg.send(challenger, "request-sent", "player", target.getName());
 
         String kitText = kit == null ? Msg.raw("own-inventory") : Msg.raw("kit-label", "kit", kit);
-        String dropText = req.itemsDrop ? Msg.raw("mode-drop") : Msg.raw("mode-keep");
+        String dropText = normalItemsDrop(kit) ? Msg.raw("mode-drop") : Msg.raw("mode-keep");
         String arenaText = arena == null ? Msg.raw("arena-random") : arena;
         Msg.send(target, "request-received", "player", challenger.getName());
-        Msg.send(target, "request-info", "kit", kitText, "mode", dropText, "arena", arenaText);
-        if (req.settings != null) {
-            Msg.send(target, "request-rules",
-                    "ladder", onOff(req.settings.isAllowLadder()), "slab", onOff(req.settings.isAllowSlab()),
-                    "button", onOff(req.settings.isAllowButton()), "cobweb", onOff(req.settings.isAllowCobweb()),
-                    "elytra", onOff(req.settings.isAllowElytra()));
-        }
+        Msg.send(target, "request-info", "kit", kitText, "mode", dropText, "arena", arenaText,
+                "strength", onOff(strength));
         target.spigot().sendMessage(buttons(
                 button(Msg.raw("button-accept"), "/duel kabul " + challenger.getName(), Msg.raw("button-accept-hover")),
                 button(Msg.raw("button-deny"), "/duel reddet " + challenger.getName(), Msg.raw("button-deny-hover"))));
@@ -280,7 +279,7 @@ public final class DuelManager {
             Msg.send(challenger, "kit-not-found", "kit", req.kit);
             return;
         }
-        startDuel(challenger, target, arena, req.kit, req.itemsDrop, req.settings, DuelInstance.Type.NORMAL);
+        startDuel(challenger, target, arena, req.kit, normalItemsDrop(req.kit), req.strength, DuelInstance.Type.NORMAL);
     }
 
     public void denyRequest(Player target, String challengerName) {
@@ -312,7 +311,7 @@ public final class DuelManager {
      * @return basarili mi
      */
     public boolean startDuel(Player a, Player b, Arena arena, String kitName, boolean itemsDrop,
-                             DuelSettings settings, DuelInstance.Type type) {
+                             boolean strength, DuelInstance.Type type) {
         if (a == null || b == null || !a.isOnline() || !b.isOnline() || a.isDead() || b.isDead()) {
             return false;
         }
@@ -337,7 +336,7 @@ public final class DuelManager {
         }
 
         plugin.getArenaManager().occupy(arena);
-        DuelInstance duel = new DuelInstance(type, a.getUniqueId(), b.getUniqueId(), arena, kitName, itemsDrop, settings);
+        DuelInstance duel = new DuelInstance(type, a.getUniqueId(), b.getUniqueId(), arena, kitName, itemsDrop, strength);
 
         for (Player p : new Player[]{a, b}) {
             plugin.getQueueManager().removeBecauseDuelStarted(p);
@@ -350,6 +349,7 @@ public final class DuelManager {
             if (p.isInsideVehicle()) p.leaveVehicle();
             prepare(p);
             if (kit != null) kit.apply(p);
+            if (strength) applyStrength(p);
         }
 
         boolean ok1 = a.teleport(s1);
@@ -379,6 +379,38 @@ public final class DuelManager {
         p.setFlying(false);
         p.setAllowFlight(false);
         heal(p);
+    }
+
+    // ------------------------------------------------------------------ Kuvvet I
+
+    private static PotionEffectType strengthType;
+
+    /** Surumden bagimsiz (INCREASE_DAMAGE / STRENGTH) Kuvvet efekti. */
+    public static PotionEffectType strengthType() {
+        if (strengthType == null) {
+            strengthType = PotionEffectType.getByKey(NamespacedKey.minecraft("strength"));
+        }
+        return strengthType;
+    }
+
+    /** Duel boyunca suren Kuvvet I (seviye 1, parcacik yok). */
+    public static void applyStrength(Player p) {
+        PotionEffectType t = strengthType();
+        if (t == null || p.isDead()) return;
+        p.addPotionEffect(new PotionEffect(t, PotionEffect.INFINITE_DURATION, 0, false, false, true));
+    }
+
+    /** Sut / totem / baska plugin Kuvvet'i silerse duel suresince geri verir. */
+    public void handleEffectRemoved(Player p) {
+        DuelInstance d = byPlayer.get(p.getUniqueId());
+        if (d == null || !d.isStrength() || d.getPhase() == DuelInstance.Phase.ENDED) return;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            DuelInstance now = byPlayer.get(p.getUniqueId());
+            if (now == d && p.isOnline() && !p.isDead() && d.getPhase() != DuelInstance.Phase.ENDED
+                    && !p.hasPotionEffect(strengthType())) {
+                applyStrength(p);
+            }
+        });
     }
 
     private static void heal(Player p) {
@@ -619,7 +651,7 @@ public final class DuelManager {
                 winner == null ? null : winner.getUniqueId().toString(),
                 loser == null ? null : loser.getUniqueId().toString(),
                 duel.getArena().getName(), duel.getKitName(),
-                duel.getSettings() == null ? null : duel.getSettings().toJson(),
+                "{\"strength\":" + duel.isStrength() + "}",
                 duel.getSnapshots().get(duel.getP1()), duel.getSnapshots().get(duel.getP2()),
                 duration, duel.isItemsDrop()));
     }

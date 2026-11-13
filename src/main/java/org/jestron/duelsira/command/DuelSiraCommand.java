@@ -47,7 +47,6 @@ public final class DuelSiraCommand implements TabExecutor {
         switch (norm(args[0])) {
             case "evet", "kabul" -> plugin.getQueueManager().respond(p, true);
             case "hayir", "reddet" -> plugin.getQueueManager().respond(p, false);
-            case "envanter" -> plugin.getQueueManager().openOpponentInventory(p);
             case "ayril", "cik" -> plugin.getQueueManager().leave(p);
             case "ekle" -> {
                 if (!admin(p)) return true;
@@ -71,6 +70,25 @@ public final class DuelSiraCommand implements TabExecutor {
                     plugin.getNpcManager().removeNearest(p);
                 }
             }
+            case "kuvvet" -> {
+                if (!admin(p)) return true;
+                if (args.length < 2) {
+                    Msg.send(p, "queue-strength-status", "state",
+                            org.jestron.duelsira.duel.DuelManager.onOff(plugin.getConfig().getBoolean("queue.strength", true)));
+                    return true;
+                }
+                String v = norm(args[1]);
+                boolean on;
+                if (v.equals("ac") || v.equals("on") || v.equals("true")) on = true;
+                else if (v.equals("kapat") || v.equals("off") || v.equals("false")) on = false;
+                else {
+                    Msg.send(p, "usage", "usage", "/duelsira kuvvet <aç|kapat>");
+                    return true;
+                }
+                plugin.getConfig().set("queue.strength", on);
+                plugin.saveConfig();
+                Msg.send(p, "queue-strength-set", "state", org.jestron.duelsira.duel.DuelManager.onOff(on));
+            }
             case "liste" -> {
                 if (!admin(p)) return true;
                 List<NpcManager.NpcData> list = plugin.getNpcManager().list();
@@ -80,7 +98,7 @@ public final class DuelSiraCommand implements TabExecutor {
                             "x", (int) Math.floor(d.getX()), "y", (int) Math.floor(d.getY()), "z", (int) Math.floor(d.getZ()));
                 }
             }
-            default -> Msg.send(p, "usage", "usage", "/duelsira <ekle|kaldır|liste|ayrıl|evet|hayır|envanter>");
+            default -> Msg.send(p, "usage", "usage", "/duelsira <evet|hayır|ayrıl|ekle|kaldır|liste|kuvvet>");
         }
         return true;
     }
@@ -98,8 +116,8 @@ public final class DuelSiraCommand implements TabExecutor {
         boolean admin = p.hasPermission("duelsira.admin");
         if (args.length == 1) {
             // Siraya girmek icin komut YOK: sadece NPC'ye sag tik.
-            List<String> opts = new ArrayList<>(Arrays.asList("evet", "hayır", "envanter", "ayrıl"));
-            if (admin) opts.addAll(Arrays.asList("ekle", "kaldır", "liste"));
+            List<String> opts = new ArrayList<>(Arrays.asList("evet", "hayır", "ayrıl"));
+            if (admin) opts.addAll(Arrays.asList("ekle", "kaldır", "liste", "kuvvet"));
             String typed = norm(args[0]);
             for (String o : opts) {
                 if (norm(o).startsWith(typed)) out.add(o);
@@ -108,6 +126,10 @@ public final class DuelSiraCommand implements TabExecutor {
             String s = norm(args[0]);
             if (s.equals("ekle")) {
                 StringUtil.copyPartialMatches(args[1], NpcManager.getMobNames(), out);
+            } else if (s.equals("kuvvet")) {
+                for (String o : Arrays.asList("aç", "kapat")) {
+                    if (norm(o).startsWith(norm(args[1]))) out.add(o);
+                }
             } else if (s.equals("kaldir")) {
                 // Eklenmis tum duel sirasi NPC'leri
                 List<String> ids = new ArrayList<>();

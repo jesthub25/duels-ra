@@ -15,11 +15,8 @@ import java.util.function.Consumer;
  */
 public final class InventoryViewMenu extends Menu {
 
-    private final boolean liveView;
-
-    private InventoryViewMenu(String title, ItemStack[] contents, boolean liveView, Consumer<Player> back) {
+    private InventoryViewMenu(String title, ItemStack[] contents, Consumer<Player> back) {
         super(6, title);
-        this.liveView = liveView;
         ItemStack[] c = contents == null ? new ItemStack[0] : contents;
         for (int i = 9; i < 36; i++) set(i - 9, clone(c, i));
         for (int i = 0; i < 9; i++) set(27 + i, clone(c, i));
@@ -47,18 +44,8 @@ public final class InventoryViewMenu extends Menu {
         return new ItemBuilder(Material.GRAY_STAINED_GLASS_PANE).name(Msg.raw(key)).build();
     }
 
-    public boolean isLiveView() {
-        return liveView;
-    }
-
-    /** Duel sirasi eslesmesinde rakibin anlik envanteri. */
-    public static void openLive(Player viewer, Player target) {
-        ItemStack[] snap = target.getInventory().getContents();
-        new InventoryViewMenu(Msg.raw("gui-view-title", "player", target.getName()), snap, true, null).open(viewer);
-    }
-
     /** Duel gecmisindeki kayitli envanter. */
     public static void openRecorded(Player viewer, String name, ItemStack[] contents, Consumer<Player> back) {
-        new InventoryViewMenu(Msg.raw("gui-view-title", "player", name), contents, false, back).open(viewer);
+        new InventoryViewMenu(Msg.raw("gui-view-title", "player", name), contents, back).open(viewer);
     }
 }

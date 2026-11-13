@@ -102,6 +102,10 @@ const inArena = (b) => {
   const p = b.entity.position;
   return p.x >= 100 && p.x < 121 && p.z >= 100 && p.z < 121;
 };
+async function hasStrength(name) {
+  const r = await cmdExpect(`execute if entity @a[name=${name},nbt={ActiveEffects:[{Id:5}]}]`, /Test (passed|failed)/);
+  return !!(r && /passed/.test(r));
+}
 async function click(b, slot, mode = 0) {
   try { await b.clickWindow(slot, 0, mode); } catch (e) { /* iptal edilen tiklama */ }
 }
@@ -110,7 +114,7 @@ async function click(b, slot, mode = 0) {
 async function main() {
   const done = await waitConsole(/Done \(/, 300000);
   check(done, 'Sunucu acildi');
-  check(consoleLines.some((l) => /DuelSira v1\.1\.0 aktif/.test(l)), 'DuelSira aktif oldu');
+  check(consoleLines.some((l) => /DuelSira v1\.2\.0 aktif/.test(l)), 'DuelSira aktif oldu');
   check(!consoleLines.some((l) => /Error occurred while enabling DuelSira/.test(l)), 'Enable hatasi yok');
 
   check(await cmdExpect('rg flag -w world __global__ pvp deny', /pvp/i), 'WorldGuard global pvp=deny');
@@ -233,33 +237,19 @@ async function main() {
   check(await jB, 'B tekrar siraya girdi');
   check(!(await waitChat(A, /eşleştin/, 3500)), 'Reddeden ayni oyuncuyla tekrar eslesmedi');
 
-  // --- C girer -> A-C eslesir; envanter goruntuleme
-  cmd('give BotC minecraft:diamond 5');
+  // --- C girer -> A-C eslesir (sohbette envanter butonu YOK)
   await sleep(800);
   mA = waitChat(A, /BotC oyuncusuyla eşleştin/);
   const mC = waitChat(C, /BotA oyuncusuyla eşleştin/);
+  const btnLine = waitChat(A, /\[EVET\]/);
   useNpc(C);
   check(await mA && await mC, 'A-C eslesti (B beklemede)');
+  const bl = await btnLine;
+  check(bl && /\[HAYIR\]/.test(bl) && !/ENVANTER/i.test(bl), 'Sohbette sadece [EVET] [HAYIR] var (' + bl + ')');
   check(!(await waitChat(B, /eşleştin/, 500)), 'B bu sirada eslesmedi');
-
-  const win = waitWindow(A);
+  const noInv = waitChat(A, /Kullanım/);
   A.chat('/duelsira envanter');
-  const w = await win;
-  check(w && /Envanter/.test(JSON.stringify(w.title)), 'Envanter goruntuleme menusu acildi');
-  check(w && w.slots[27] && w.slots[27].name === 'diamond', 'Rakibin elmasi menude gorunuyor');
-  if (w) {
-    await click(A, 27, 0);
-    await sleep(300);
-    await click(A, 81, 0);
-    await sleep(300);
-    await click(A, 27, 1);
-    await sleep(500);
-    A.closeWindow(w);
-  }
-  await sleep(800);
-  const diamondId = A.registry.itemsByName.diamond.id;
-  check(A.inventory.count(diamondId) === 0, 'Menudan esya alinamadi');
-  check(C.inventory.count(diamondId) === 5, 'Rakibin esyasi yerinde');
+  check(await noInv, '/duelsira envanter kaldirildi');
 
   // --- kabul -> duel
   const st = waitChat(A, /Duel başlıyor/);
@@ -269,6 +259,7 @@ async function main() {
   check(await st, 'Iki taraf kabul edince duel basladi');
   await sleep(1200);
   check(inArena(A) && inArena(C), 'Oyuncular arenaya isinlandi');
+  check(await hasStrength('BotA') && await hasStrength('BotC'), 'Duel sirasi duellosunda Kuvvet I verildi');
   const helpBlocked = waitChat(C, /komut kullanamazsın/);
   C.chat('/help');
   check(await helpBlocked, 'Duelde komut engeli');
@@ -357,13 +348,18 @@ async function main() {
   A.chat('/duel BotB');
   const g = await gw;
   check(g, 'Duel gonderme menusu acildi');
+  check(g && g.slots[15] && g.slots[15].name === 'gray_dye', 'Menude Kuvvet I secenegi (varsayilan kapali)');
+  check(g && !g.slots[22] && !g.slots[12], 'Esya dusme ve kural secenekleri kaldirildi');
   const rB = waitChat(B, /BotA sana duel teklifi gönderdi/);
+  const rInfo = waitChat(B, /Kuvvet I: Kapalı/);
   if (g) await click(A, 0, 0);
   check(await rB, 'Normal duel istegi gitti');
+  check(await rInfo, 'Istekte Kuvvet I: Kapali yaziyor');
   const sB = waitChat(B, /Duel başlıyor/);
   B.chat('/duel kabul BotA');
   check(await sB, 'Normal duel basladi');
   await sleep(800);
+  check(!(await hasStrength('BotB')), 'Kuvvet kapaliyken verilmedi');
   cmd('tp BotC -1 -60 2');
   await sleep(1500);
   const full = waitChat(C, /Tüm arenalar şu an dolu/);
@@ -407,15 +403,25 @@ async function main() {
   await click(A, 1, 0);
   const k3 = await kw;
   check(k3, 'Kit secildi, ana menuye donuldu');
+  kw = waitWindow(A);
+  await click(A, 15, 0);
+  const k4 = await kw;
+  check(k4 && k4.slots[15] && k4.slots[15].name === 'blaze_powder', 'Kuvvet I acildi');
   const kreq = waitChat(B, /BotA sana duel teklifi gönderdi/);
+  const kInfo = waitChat(B, /Kuvvet I: Açık/);
   await click(A, 0, 0);
   check(await kreq, 'Kitli duel istegi gitti');
+  check(await kInfo, 'Istekte Kuvvet I: Acik yaziyor');
   const kst = waitChat(B, /Duel başlıyor/);
   B.chat('/duel kabul BotA');
   check(await kst, 'Kitli duel basladi');
   await sleep(1500);
   check(B.inventory.count(swordId) === 1 && B.inventory.count(goldId) === 0, 'Kit verildi (B kendi esyalari yerine kit)');
   check(A.inventory.count(swordId) === 1 && A.inventory.count(appleId) === 0, 'Kit verildi (A)');
+  check(await hasStrength('BotA') && await hasStrength('BotB'), 'Manuel duelde Kuvvet I acikken verildi');
+  cmd('effect clear BotA');
+  await sleep(600);
+  check(await hasStrength('BotA'), 'Kuvvet I silinince (sut/totem) geri verildi');
   check(fs.readdirSync(path.join(SERVER_DIR, 'plugins/DuelSira/states')).length === 2, 'Envanter yedegi diske yazildi');
   await sleep(2500);
   const noChange = waitConsole(/Arena 'test1': degisiklik yok, yapistirma atlandi/, 30000);
@@ -427,6 +433,18 @@ async function main() {
   check(A.inventory.count(appleId) === 2 && A.inventory.count(swordId) === 0, 'Kazananin eski envanteri geri geldi');
   check(fs.readdirSync(path.join(SERVER_DIR, 'plugins/DuelSira/states')).length === 0, 'Envanter yedekleri temizlendi');
   check(!inArena(A) && !inArena(B), 'Kitli duel sonrasi arenadan cikildi');
+  check(!(await hasStrength('BotA')) && !(await hasStrength('BotB')), 'Duel bitince Kuvvet I kaldirildi');
+
+  // --- Sira Kuvvet I ayari sadece admin
+  const nb = waitChat(B, /yetkin yok/);
+  B.chat('/duelsira kuvvet kapat');
+  check(await nb, 'Admin olmayan sira kuvvetini degistiremez');
+  const ka = waitChat(A, /Kuvvet I ayarlandı: Kapalı/);
+  A.chat('/duelsira kuvvet kapat');
+  check(await ka, 'Admin sira kuvvetini kapatti');
+  const ko = waitChat(A, /Kuvvet I ayarlandı: Açık/);
+  A.chat('/duelsira kuvvet aç');
+  check(await ko, 'Admin sira kuvvetini acti');
   const nc = await noChange;
   check(nc, 'Blok degismeyen duelde schem yapistirilmadi (' + nc + ')');
 
